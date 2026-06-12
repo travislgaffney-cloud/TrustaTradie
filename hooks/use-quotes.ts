@@ -1,0 +1,121 @@
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import type { Quote } from '@/types/database';
+import { useAuthStore } from '@/store/auth-store';
+
+export function useJobQuotes(jobId: string) {
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchQuotes();
+    const channel = supabase
+      .channel(`quotes:${jobId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'quotes',
+        filter: `job_id=eq.${jobId}`,
+      }, () => fetchQuotes())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [jobId]);
+
+  async function fetchQuotes() {
+    setLoading(true);
+    const { data } = await supabase
+      .from('quotes')
+      .select('*, tradie:profiles!quotes_tradie_id_fkey(*), tradie_profile:tradie_profiles(*)')
+      .eq('job_id', jobId)
+      .order('created_at', { ascending: false });
+    setQuotes((data as Quote[]) ?? []);
+    setLoading(false);
+  }
+
+  return { quotes, loading, refresh: fetchQuotes };
+}
+
+export function useMyQuotes() {
+  const { user } = useAuthStore();
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchQuotes();
+  }, [user]);
+
+  async function fetchQuotes() {
+    setLoading(true);
+    const { data } = await supabase
+      .from('quotes')
+      .select('*, job:jobs(*)')
+      .eq('tradie_id', user!.id)
+      .order('created_at', { ascending: false });
+    setQuotes((data as Quote[]) ?? []);
+    setLoading(false);
+  }
+
+  return { quotes, loading, refresh: fetchQuotes };
+}
+
+export async function submitQuote(params: {
+  jobId: string;
+  tradieId: string;
+  amount: number;
+  includesVat: boolean;
+  message: string;
+  timelineDays: number;
+}): Promise<Quote> {
+  // Upsert conversation so both parties have a chat channel
+  const { data: job } = await supabase
+    .from('jobs')
+    .select('customer_id')
+    .eq('id', params.jobId)
+    .single();
+
+  if (job) {
+    await supabase.from('conversations').upsert({
+      job_id: params.jobId,
+      customer_id: job.customer_id,
+      tradie_id: params.tradieId,
+    }, { onConflict: 'job_id,customer_id,tradie_id' });
+  }
+
+  const { data, error } = await supabase
+    .from('quotes')
+    .insert({
+      job_id: params.jobId,
+      tradie_id: params.tradieId,
+      amount: params.amount,
+      includes_vat: params.includesVat,
+      message: params.message,
+      timeline_days: params.timelineDays,
+      status: 'pending',
+    })
+    .select()
+    .single<Quote>();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function acceptQuote(quoteId: string, jobId: string): Promise<void> {
+  await supabase
+    .from('quotes')
+    .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+    .eq('id', quoteId);
+
+  await supabase
+    .from('jobs')
+    .update({ status: 'accepted', accepted_quote_id: quoteId })
+    .eq('id', jobId);
+
+  // Reject all other pending quotes for this job
+  await supabase
+    .from('quotes')
+    .update({ status: 'rejected' })
+    .eq('job_id', jobId)
+    .neq('id', quoteId)
+    .eq('status', 'pending');
+}

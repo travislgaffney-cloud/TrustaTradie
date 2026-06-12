@@ -1,0 +1,30 @@
+[api]
+port = 54321
+
+[db]
+port = 54322
+
+[studio]
+port = 54323
+
+[inbucket]
+port = 54324
+
+[storage]
+file_size_limit = "50MiB"
+
+[auth]
+site_url = "trustatradie://"
+additional_redirect_urls = ["trustatradie://auth/callback", "trustatradie://payment/success", "trustatradie://payment/cancel"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_CLIENT_SECRET)"
