@@ -70,7 +70,13 @@ export default function CustomerLayout() {
       />
       {/* Hidden routes — not shown in tab bar */}
       <Tabs.Screen name="profile/index" options={{ href: null }} />
+      <Tabs.Screen name="profile/settings" options={{ href: null }} />
       <Tabs.Screen name="payments/index" options={{ href: null }} />
+      <Tabs.Screen name="payments/checkout" options={{ href: null }} />
+      <Tabs.Screen name="post-job/details" options={{ href: null }} />
+      <Tabs.Screen name="post-job/ai-image" options={{ href: null }} />
+      <Tabs.Screen name="post-job/location" options={{ href: null }} />
+      <Tabs.Screen name="post-job/review" options={{ href: null }} />
     </Tabs>
   );
 }

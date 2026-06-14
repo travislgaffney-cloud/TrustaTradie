@@ -41,7 +41,11 @@ export default function TradieLayout() {
         tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'notifications' : 'notifications-outline'} focused={focused} color={color} />,
       }} />
       <Tabs.Screen name="profile/index" options={{ href: null }} />
+      <Tabs.Screen name="profile/edit" options={{ href: null }} />
+      <Tabs.Screen name="profile/documents" options={{ href: null }} />
+      <Tabs.Screen name="profile/portfolio" options={{ href: null }} />
       <Tabs.Screen name="earnings/index" options={{ href: null }} />
+      <Tabs.Screen name="earnings/bank-details" options={{ href: null }} />
     </Tabs>
   );
 }
