@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import MapView, { Callout, Marker, type Region } from 'react-native-maps';
+import { Avatar } from '@/components/ui/avatar';
 import { Brand, Colors } from '@/constants/theme';
 import { TRADE_CATEGORIES, type TradeCategory } from '@/constants/trade-categories';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -12,7 +13,7 @@ import { useAuthStore } from '@/store/auth-store';
 export default function TradieHomeScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
-  const { tradieProfile } = useAuthStore();
+  const { profile, tradieProfile } = useAuthStore();
   const { coords } = useLocation();
   const radius = tradieProfile?.service_radius_km ?? 50;
   const [selectedCategory, setSelectedCategory] = useState<TradeCategory | null>(null);
@@ -34,10 +35,15 @@ export default function TradieHomeScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Nearby Jobs</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          {jobs.length} job{jobs.length !== 1 ? 's' : ''} within {radius} km
-        </Text>
+        <View style={styles.headerTextWrap}>
+          <Text style={[styles.title, { color: colors.text }]}>Nearby Jobs</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            {jobs.length} job{jobs.length !== 1 ? 's' : ''} within {radius} km
+          </Text>
+        </View>
+        <Pressable onPress={() => router.push('/(tradie)/profile')}>
+          <Avatar uri={profile?.avatar_url} name={profile?.full_name} size={36} color="#38BDF8" />
+        </Pressable>
       </View>
 
       {/* Category filter */}
@@ -97,7 +103,16 @@ export default function TradieHomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  header: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  headerTextWrap: { flex: 1, gap: 2 },
   title: { fontSize: 22, fontWeight: '800' },
   subtitle: { fontSize: 13, marginTop: 2 },
   filters: { flexDirection: 'row', flexWrap: 'nowrap', paddingHorizontal: 12, paddingBottom: 8, gap: 6 },

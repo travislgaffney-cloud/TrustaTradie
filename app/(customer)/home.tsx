@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { JobCard } from '@/components/jobs/job-card';
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -37,10 +38,17 @@ export default function CustomerHomeScreen() {
       >
         {/* Header */}
         <View style={[styles.header, { backgroundColor: Brand.primary }]}>
-          <Text style={styles.greeting}>
-            👋 Hello, {profile?.full_name?.split(' ')[0] ?? 'there'}
-          </Text>
-          <Text style={styles.headerSubtitle}>Find trusted tradies for your home</Text>
+          <View style={styles.headerTop}>
+            <View style={styles.headerTextWrap}>
+              <Text style={styles.greeting}>
+                👋 Hello, {profile?.full_name?.split(' ')[0] ?? 'there'}
+              </Text>
+              <Text style={styles.headerSubtitle}>Find trusted tradies for your home</Text>
+            </View>
+            <Pressable onPress={() => router.push('/(customer)/profile')}>
+              <Avatar uri={profile?.avatar_url} name={profile?.full_name} size={36} color="#38BDF8" />
+            </Pressable>
+          </View>
         </View>
 
         {/* Quick stats */}
@@ -103,6 +111,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     gap: 4,
   },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  headerTextWrap: { flex: 1, gap: 4 },
   greeting: { fontSize: 24, fontWeight: '800', color: '#fff' },
   headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.85)' },
   statsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingTop: 16 },

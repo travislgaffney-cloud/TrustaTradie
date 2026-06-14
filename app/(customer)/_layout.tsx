@@ -41,7 +41,7 @@ export default function CustomerLayout() {
         }}
       />
       <Tabs.Screen
-        name="jobs"
+        name="jobs/index"
         options={{
           title: 'My Jobs',
           tabBarIcon: ({ focused, color }) => (
@@ -50,7 +50,7 @@ export default function CustomerLayout() {
         }}
       />
       <Tabs.Screen
-        name="messages"
+        name="messages/index"
         options={{
           title: 'Messages',
           tabBarIcon: ({ focused, color }) => (
@@ -68,18 +68,9 @@ export default function CustomerLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} color={color} />
-          ),
-        }}
-      />
       {/* Hidden routes — not shown in tab bar */}
-      <Tabs.Screen name="post-job" options={{ href: null }} />
-      <Tabs.Screen name="payments" options={{ href: null }} />
+      <Tabs.Screen name="profile/index" options={{ href: null }} />
+      <Tabs.Screen name="payments/index" options={{ href: null }} />
     </Tabs>
   );
 }

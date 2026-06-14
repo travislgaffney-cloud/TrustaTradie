@@ -6,9 +6,10 @@ interface AvatarProps {
   uri?: string | null;
   name?: string | null;
   size?: number;
+  color?: string;
 }
 
-export function Avatar({ uri, name, size = 44 }: AvatarProps) {
+export function Avatar({ uri, name, size = 44, color = Brand.primary }: AvatarProps) {
   const initials = name
     ? name
         .split(' ')
@@ -33,7 +34,7 @@ export function Avatar({ uri, name, size = 44 }: AvatarProps) {
     <View
       style={[
         styles.fallback,
-        { width: size, height: size, borderRadius: size / 2 },
+        { width: size, height: size, borderRadius: size / 2, backgroundColor: color },
       ]}
     >
       <Text style={[styles.initials, { fontSize }]}>{initials}</Text>
@@ -44,7 +45,6 @@ export function Avatar({ uri, name, size = 44 }: AvatarProps) {
 const styles = StyleSheet.create({
   image: { backgroundColor: '#e2e8f0' },
   fallback: {
-    backgroundColor: Brand.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
