@@ -91,10 +91,16 @@
           "sounds": []
         }
       ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": false,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "593b69a2-885e-4a2c-b950-46260707acce"
+      }
     }
   }
 }

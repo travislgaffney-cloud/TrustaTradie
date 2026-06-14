@@ -1,13 +1,13 @@
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { JobCard } from '@/components/jobs/job-card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useMyJobs } from '@/hooks/use-jobs';
+import { deleteJob, useMyJobs } from '@/hooks/use-jobs';
 import type { JobStatus } from '@/types/database';
 
 type Filter = 'active' | 'completed' | 'all';
@@ -25,6 +25,15 @@ export default function CustomerJobsScreen() {
     if (filter === 'completed') return j.status === 'completed';
     return true;
   });
+
+  async function handleDeleteJob(jobId: string) {
+    try {
+      await deleteJob(jobId);
+      refresh();
+    } catch (err: any) {
+      Alert.alert('Error', err.message ?? 'Failed to delete job');
+    }
+  }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -61,7 +70,9 @@ export default function CustomerJobsScreen() {
             onAction={() => router.push('/(customer)/post-job/details')}
           />
         ) : (
-          filtered.map((job) => <JobCard key={job.id} job={job} mode="customer" />)
+          filtered.map((job) => (
+            <JobCard key={job.id} job={job} mode="customer" onDelete={() => handleDeleteJob(job.id)} />
+          ))
         )}
       </ScrollView>
     </SafeAreaView>

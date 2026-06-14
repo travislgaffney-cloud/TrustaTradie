@@ -1,12 +1,20 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Text } from 'react-native';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNotifications } from '@/hooks/use-notifications';
 
-function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
-  return <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>;
+function TabIcon({
+  name,
+  focused,
+  color,
+}: {
+  name: keyof typeof Ionicons.glyphMap;
+  focused: boolean;
+  color: string;
+}) {
+  return <Ionicons name={name} size={22} color={color} style={{ opacity: focused ? 1 : 0.7 }} />;
 }
 
 export default function CustomerLayout() {
@@ -27,21 +35,27 @@ export default function CustomerLayout() {
         name="home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🏡" label="Home" focused={focused} />,
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="jobs"
         options={{
           title: 'My Jobs',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📋" label="Jobs" focused={focused} />,
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon name={focused ? 'briefcase' : 'briefcase-outline'} focused={focused} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="messages"
         options={{
           title: 'Messages',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="💬" label="Messages" focused={focused} />,
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon name={focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'} focused={focused} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -49,14 +63,18 @@ export default function CustomerLayout() {
         options={{
           title: 'Alerts',
           tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🔔" label="Alerts" focused={focused} />,
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon name={focused ? 'notifications' : 'notifications-outline'} focused={focused} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="👤" label="Profile" focused={focused} />,
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} color={color} />
+          ),
         }}
       />
       {/* Hidden routes — not shown in tab bar */}

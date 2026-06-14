@@ -1,7 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { formatDistanceToNow } from 'date-fns';
 import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Card } from '@/components/ui/card';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -14,10 +15,11 @@ interface JobCardProps {
   showDistance?: boolean;
   distanceKm?: number;
   onPress?: () => void;
+  onDelete?: () => void;
   mode?: 'customer' | 'tradie';
 }
 
-export function JobCard({ job, showDistance, distanceKm, onPress, mode = 'customer' }: JobCardProps) {
+export function JobCard({ job, showDistance, distanceKm, onPress, onDelete, mode = 'customer' }: JobCardProps) {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
 
@@ -32,11 +34,31 @@ export function JobCard({ job, showDistance, distanceKm, onPress, mode = 'custom
     }
   }
 
+  function handleDelete() {
+    Alert.alert(
+      'Delete Job',
+      `Are you sure you want to delete "${job.title}"? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: onDelete },
+      ]
+    );
+  }
+
   return (
     <Pressable onPress={handlePress}>
       <Card elevated style={styles.card}>
         {firstImage && (
           <Image source={{ uri: firstImage }} style={styles.image} />
+        )}
+        {onDelete && (
+          <Pressable
+            onPress={handleDelete}
+            style={[styles.deleteButton, { backgroundColor: colors.surface }]}
+            hitSlop={8}
+          >
+            <Ionicons name="trash-outline" size={18} color={colors.textSecondary} />
+          </Pressable>
         )}
         <View style={styles.content}>
           <View style={styles.row}>
@@ -73,6 +95,17 @@ export function JobCard({ job, showDistance, distanceKm, onPress, mode = 'custom
 const styles = StyleSheet.create({
   card: { padding: 0, overflow: 'hidden' },
   image: { width: '100%', height: 140, resizeMode: 'cover' },
+  deleteButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
   content: { padding: 14, gap: 8 },
   row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   title: { fontSize: 16, fontWeight: '700' },

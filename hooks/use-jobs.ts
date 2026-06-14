@@ -114,3 +114,8 @@ export async function createJob(params: {
   if (error) throw error;
   return data;
 }
+
+export async function deleteJob(jobId: string): Promise<void> {
+  const { error } = await supabase.from('jobs').delete().eq('id', jobId);
+  if (error) throw error;
+}
