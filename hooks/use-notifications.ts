@@ -3,6 +3,47 @@ import { supabase } from '@/lib/supabase';
 import type { Notification } from '@/types/database';
 import { useAuthStore } from '@/store/auth-store';
 
+type NotificationListener = (notification: Notification) => void;
+
+interface ChannelEntry {
+  channel: ReturnType<typeof supabase.channel>;
+  listeners: Set<NotificationListener>;
+}
+
+const channelRegistry = new Map<string, ChannelEntry>();
+
+// Multiple components call useNotifications() for the same user (tab bar badge +
+// alerts screen). Realtime channels with the same topic can't have postgres_changes
+// callbacks added after subscribe(), so share a single channel/subscription per user.
+function subscribeToNotifications(userId: string, listener: NotificationListener) {
+  let entry = channelRegistry.get(userId);
+  if (!entry) {
+    const listeners = new Set<NotificationListener>();
+    const channel = supabase
+      .channel(`notifications:${userId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        listeners.forEach((l) => l(payload.new as Notification));
+      })
+      .subscribe();
+    entry = { channel, listeners };
+    channelRegistry.set(userId, entry);
+  }
+  entry.listeners.add(listener);
+
+  return () => {
+    entry!.listeners.delete(listener);
+    if (entry!.listeners.size === 0) {
+      supabase.removeChannel(entry!.channel);
+      channelRegistry.delete(userId);
+    }
+  };
+}
+
 export function useNotifications() {
   const { user } = useAuthStore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -12,19 +53,10 @@ export function useNotifications() {
   useEffect(() => {
     if (!user) return;
     fetch();
-    const channel = supabase
-      .channel(`notifications:${user.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${user.id}`,
-      }, (payload) => {
-        setNotifications((prev) => [payload.new as Notification, ...prev]);
-        setUnreadCount((c) => c + 1);
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return subscribeToNotifications(user.id, (notification) => {
+      setNotifications((prev) => [notification, ...prev]);
+      setUnreadCount((c) => c + 1);
+    });
   }, [user]);
 
   async function fetch() {
