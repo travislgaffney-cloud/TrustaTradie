@@ -50,15 +50,6 @@ export default function CustomerLayout() {
         }}
       />
       <Tabs.Screen
-        name="messages/index"
-        options={{
-          title: 'Messages',
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon name={focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'} focused={focused} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="notifications"
         options={{
           title: 'Alerts',
@@ -69,10 +60,16 @@ export default function CustomerLayout() {
         }}
       />
       {/* Hidden routes — not shown in tab bar */}
+      <Tabs.Screen name="messages/index" options={{ href: null }} />
+      <Tabs.Screen name="messages/[conversationId]" options={{ href: null }} />
       <Tabs.Screen name="profile/index" options={{ href: null }} />
       <Tabs.Screen name="profile/settings" options={{ href: null }} />
+      <Tabs.Screen name="jobs/[jobId]/index" options={{ href: null }} />
+      <Tabs.Screen name="jobs/[jobId]/quotes" options={{ href: null }} />
+      <Tabs.Screen name="jobs/[jobId]/accept-quote" options={{ href: null }} />
       <Tabs.Screen name="payments/index" options={{ href: null }} />
       <Tabs.Screen name="payments/checkout" options={{ href: null }} />
+      <Tabs.Screen name="payments/[paymentId]" options={{ href: null }} />
       <Tabs.Screen name="post-job/details" options={{ href: null }} />
       <Tabs.Screen name="post-job/ai-image" options={{ href: null }} />
       <Tabs.Screen name="post-job/location" options={{ href: null }} />

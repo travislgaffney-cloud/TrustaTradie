@@ -34,12 +34,16 @@ export default function TradieLayout() {
       <Tabs.Screen name="home" options={{ title: 'Nearby Jobs', tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'map' : 'map-outline'} focused={focused} color={color} /> }} />
       <Tabs.Screen name="jobs/index" options={{ title: 'Browse', tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'search' : 'search-outline'} focused={focused} color={color} /> }} />
       <Tabs.Screen name="my-quotes/index" options={{ title: 'My Quotes', tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'document-text' : 'document-text-outline'} focused={focused} color={color} /> }} />
-      <Tabs.Screen name="messages/index" options={{ title: 'Messages', tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'} focused={focused} color={color} /> }} />
       <Tabs.Screen name="notifications" options={{
         title: 'Alerts',
         tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
         tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'notifications' : 'notifications-outline'} focused={focused} color={color} />,
       }} />
+      <Tabs.Screen name="messages/index" options={{ href: null }} />
+      <Tabs.Screen name="messages/[conversationId]" options={{ href: null }} />
+      <Tabs.Screen name="jobs/[jobId]/index" options={{ href: null }} />
+      <Tabs.Screen name="jobs/[jobId]/submit-quote" options={{ href: null }} />
+      <Tabs.Screen name="active-jobs/[jobId]/index" options={{ href: null }} />
       <Tabs.Screen name="profile/index" options={{ href: null }} />
       <Tabs.Screen name="profile/edit" options={{ href: null }} />
       <Tabs.Screen name="profile/documents" options={{ href: null }} />
