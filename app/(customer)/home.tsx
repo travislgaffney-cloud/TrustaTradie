@@ -71,17 +71,6 @@ export default function CustomerHomeScreen() {
           </View>
         </View>
 
-        {/* Post job CTA */}
-        <Link href="/(customer)/post-job/details" asChild>
-          <Pressable style={[styles.postJobCta, { backgroundColor: Brand.primary }]}>
-            <Text style={styles.postJobIcon}>➕</Text>
-            <View>
-              <Text style={styles.postJobTitle}>Post a New Job</Text>
-              <Text style={styles.postJobSubtitle}>Get quotes from local tradies</Text>
-            </View>
-          </Pressable>
-        </Link>
-
         {/* Active jobs */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Active Jobs</Text>
@@ -98,13 +87,22 @@ export default function CustomerHomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Create job button */}
+      <View style={styles.createJobWrap} pointerEvents="box-none">
+        <Link href="/(customer)/post-job/details" asChild>
+          <Pressable style={[styles.createJobBtn, { backgroundColor: Brand.primary }]}>
+            <Text style={styles.createJobText}>Create Job</Text>
+          </Pressable>
+        </Link>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  scroll: { flexGrow: 1, gap: 0 },
+  scroll: { flexGrow: 1, gap: 0, paddingBottom: 100 },
   header: {
     paddingTop: 20,
     paddingBottom: 24,
@@ -130,18 +128,24 @@ const styles = StyleSheet.create({
   },
   statNum: { fontSize: 24, fontWeight: '800' },
   statLabel: { fontSize: 11, marginTop: 2, textAlign: 'center' },
-  postJobCta: {
-    flexDirection: 'row',
+  createJobWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 24,
     alignItems: 'center',
-    gap: 14,
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 14,
-    padding: 18,
   },
-  postJobIcon: { fontSize: 32 },
-  postJobTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  postJobSubtitle: { color: 'rgba(255,255,255,0.85)', fontSize: 13 },
+  createJobBtn: {
+    paddingHorizontal: 36,
+    paddingVertical: 14,
+    borderRadius: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  createJobText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   section: { padding: 16, gap: 12 },
   sectionTitle: { fontSize: 18, fontWeight: '700' },
 });

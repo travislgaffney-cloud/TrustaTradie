@@ -2,12 +2,13 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Pressable, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { JobCard } from '@/components/jobs/job-card';
-import { Button } from '@/components/ui/button';
+import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Colors } from '@/constants/theme';
+import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { deleteJob, useMyJobs } from '@/hooks/use-jobs';
+import { useAuthStore } from '@/store/auth-store';
 import type { JobStatus } from '@/types/database';
 
 type Filter = 'active' | 'completed' | 'all';
@@ -15,6 +16,7 @@ type Filter = 'active' | 'completed' | 'all';
 export default function CustomerJobsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
+  const { profile } = useAuthStore();
   const { jobs, loading, refresh } = useMyJobs();
   const [filter, setFilter] = useState<Filter>('active');
 
@@ -37,11 +39,16 @@ export default function CustomerJobsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.title, { color: colors.text }]}>My Jobs</Text>
-        <Button size="sm" onPress={() => router.push('/(customer)/post-job/details')}>
-          + Post Job
-        </Button>
+      <View style={[styles.header, { backgroundColor: Brand.secondary }]}>
+        <View style={styles.headerTop}>
+          <View style={styles.headerTextWrap}>
+            <Text style={styles.greeting}>My Jobs</Text>
+            <Text style={styles.headerSubtitle}>Track your posted jobs and quotes</Text>
+          </View>
+          <Pressable onPress={() => router.push('/(customer)/profile')}>
+            <Avatar uri={profile?.avatar_url} name={profile?.full_name} size={36} color="#38BDF8" />
+          </Pressable>
+        </View>
       </View>
 
       {/* Filter tabs */}
@@ -82,14 +89,20 @@ export default function CustomerJobsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingTop: 20,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    gap: 4,
   },
-  title: { fontSize: 22, fontWeight: '800' },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  headerTextWrap: { flex: 1, gap: 4 },
+  greeting: { fontSize: 24, fontWeight: '800', color: '#fff' },
+  headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.85)' },
   tabs: { flexDirection: 'row', borderBottomWidth: 1 },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 12 },
   tabText: { fontSize: 14, fontWeight: '500' },
