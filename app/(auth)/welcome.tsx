@@ -24,7 +24,7 @@ export default function WelcomeScreen() {
         bounces={false}
       >
         {/* Hero */}
-        <View style={[styles.hero, { backgroundColor: Brand.primary }]}>
+        <View style={[styles.hero, { backgroundColor: Brand.secondary }]}>
           <Text style={styles.heroEmoji}>🔨</Text>
           <Text style={styles.heroTitle}>Trust-a-Tradie</Text>
           <Text style={styles.heroSubtitle}>

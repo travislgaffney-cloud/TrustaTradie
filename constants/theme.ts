@@ -4,7 +4,7 @@ export const Brand = {
   primary: '#F97316',       // orange-500
   primaryDark: '#EA6C0A',   // orange-600
   primaryLight: '#FED7AA',  // orange-200
-  secondary: '#0f172a',     // slate-900
+  secondary: '#1B2D4F',     // logo navy
   accent: '#FBBF24',        // amber-400
 };
 

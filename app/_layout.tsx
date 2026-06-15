@@ -6,7 +6,7 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuth } from '@/hooks/use-auth';
 import { useAuthStore } from '@/store/auth-store';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { AppLoadingScreen } from '@/components/ui/app-loading-screen';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -15,7 +15,7 @@ export default function RootLayout() {
   // Initialise auth listener
   useAuth();
 
-  if (isLoading) return <LoadingSpinner full />;
+  if (isLoading) return <AppLoadingScreen />;
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

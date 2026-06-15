@@ -37,11 +37,11 @@ export default function CustomerHomeScreen() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
       >
         {/* Header */}
-        <View style={[styles.header, { backgroundColor: Brand.primary }]}>
+        <View style={[styles.header, { backgroundColor: Brand.secondary }]}>
           <View style={styles.headerTop}>
             <View style={styles.headerTextWrap}>
               <Text style={styles.greeting}>
-                👋 Hello, {profile?.full_name?.split(' ')[0] ?? 'there'}
+                Hello, {profile?.full_name?.split(' ')[0] ?? 'there'}
               </Text>
               <Text style={styles.headerSubtitle}>Find trusted tradies for your home</Text>
             </View>
