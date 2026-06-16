@@ -80,7 +80,7 @@ export default function SubmitQuoteScreen() {
     try {
       const ext = attachment.name.split('.').pop() ?? 'bin';
       const path = `${user.id}/${jobId}/${Date.now()}.${ext}`;
-      const base64 = await FileSystem.readAsStringAsync(attachment.uri, { encoding: FileSystem.EncodingType.Base64 });
+      const base64 = await FileSystem.readAsStringAsync(attachment.uri, { encoding: 'base64' });
       const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
       const { error } = await supabase.storage.from('quote-documents').upload(path, bytes, {
         contentType: attachment.mimeType,
