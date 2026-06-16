@@ -66,6 +66,7 @@ export async function submitQuote(params: {
   includesVat: boolean;
   message: string;
   timelineDays: number;
+  quoteDocumentUrl?: string;
 }): Promise<Quote> {
   // Upsert conversation so both parties have a chat channel
   const { data: job } = await supabase
@@ -91,6 +92,7 @@ export async function submitQuote(params: {
       includes_vat: params.includesVat,
       message: params.message,
       timeline_days: params.timelineDays,
+      quote_document_url: params.quoteDocumentUrl ?? null,
       status: 'pending',
     })
     .select()

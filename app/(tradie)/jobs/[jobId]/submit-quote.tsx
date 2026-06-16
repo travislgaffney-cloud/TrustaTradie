@@ -1,4 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -7,10 +10,11 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PLATFORM_FEE } from '@/constants/config';
-import { Colors } from '@/constants/theme';
+import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/auth-store';
 import { submitQuote } from '@/hooks/use-quotes';
+import { supabase } from '@/lib/supabase';
 
 const schema = z.object({
   amount: z.string().min(1).refine((v) => !isNaN(Number(v)) && Number(v) > 0, 'Enter a valid amount'),
@@ -20,6 +24,12 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+type AttachedFile = {
+  uri: string;
+  name: string;
+  mimeType: string;
+};
+
 export default function SubmitQuoteScreen() {
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
   const scheme = useColorScheme() ?? 'light';
@@ -27,6 +37,8 @@ export default function SubmitQuoteScreen() {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [includesVat, setIncludesVat] = useState(true);
+  const [attachment, setAttachment] = useState<AttachedFile | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const { control, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -35,10 +47,58 @@ export default function SubmitQuoteScreen() {
   const amount = Number(watch('amount') ?? 0);
   const tradiePayout = amount * (1 - PLATFORM_FEE);
 
+  async function pickFromGallery() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.9,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      const name = asset.fileName ?? `quote-${Date.now()}.jpg`;
+      setAttachment({ uri: asset.uri, name, mimeType: asset.mimeType ?? 'image/jpeg' });
+    }
+  }
+
+  async function pickDocument() {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ['application/pdf', 'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/*'],
+      copyToCacheDirectory: true,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      setAttachment({ uri: asset.uri, name: asset.name, mimeType: asset.mimeType ?? 'application/octet-stream' });
+    }
+  }
+
+  async function uploadAttachment(): Promise<string | undefined> {
+    if (!attachment || !user) return undefined;
+    setUploading(true);
+    try {
+      const ext = attachment.name.split('.').pop() ?? 'bin';
+      const path = `${user.id}/${jobId}/${Date.now()}.${ext}`;
+      const base64 = await FileSystem.readAsStringAsync(attachment.uri, { encoding: FileSystem.EncodingType.Base64 });
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const { error } = await supabase.storage.from('quote-documents').upload(path, bytes, {
+        contentType: attachment.mimeType,
+        upsert: true,
+      });
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('quote-documents').getPublicUrl(path);
+      return publicUrl;
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function onSubmit(data: FormData) {
     if (!user) return;
     setLoading(true);
     try {
+      const quoteDocumentUrl = await uploadAttachment();
       await submitQuote({
         jobId,
         tradieId: user.id,
@@ -46,6 +106,7 @@ export default function SubmitQuoteScreen() {
         includesVat,
         message: data.message,
         timelineDays: Number(data.timelineDays),
+        quoteDocumentUrl,
       });
       router.replace('/(tradie)/my-quotes');
     } catch (e) {
@@ -122,8 +183,47 @@ export default function SubmitQuoteScreen() {
             />
           )} />
 
-          <Button size="lg" loading={loading} onPress={handleSubmit(onSubmit)}>
-            Submit Quote
+          {/* Quote document attachment */}
+          <View style={styles.attachSection}>
+            <Text style={[styles.attachLabel, { color: colors.text }]}>Attach quote document (optional)</Text>
+            <Text style={[styles.attachHint, { color: colors.textSecondary }]}>
+              Upload a PDF, Word doc, or photo of your formal quote
+            </Text>
+
+            {attachment ? (
+              <View style={[styles.attachedFile, { backgroundColor: colors.surface, borderColor: Brand.secondary }]}>
+                <Text style={styles.attachedIcon}>
+                  {attachment.mimeType.startsWith('image') ? '🖼️' : '📄'}
+                </Text>
+                <Text style={[styles.attachedName, { color: colors.text }]} numberOfLines={1}>
+                  {attachment.name}
+                </Text>
+                <Pressable onPress={() => setAttachment(null)}>
+                  <Text style={[styles.removeBtn, { color: colors.error }]}>✕</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.attachButtons}>
+                <Pressable
+                  onPress={pickFromGallery}
+                  style={[styles.attachBtn, { backgroundColor: Brand.secondary }]}
+                >
+                  <Text style={styles.attachBtnIcon}>🖼️</Text>
+                  <Text style={styles.attachBtnLabel}>Camera Roll</Text>
+                </Pressable>
+                <Pressable
+                  onPress={pickDocument}
+                  style={[styles.attachBtn, { backgroundColor: Brand.secondary }]}
+                >
+                  <Text style={styles.attachBtnIcon}>📁</Text>
+                  <Text style={styles.attachBtnLabel}>Browse Files</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+
+          <Button size="lg" loading={loading || uploading} onPress={handleSubmit(onSubmit)}>
+            {uploading ? 'Uploading...' : 'Submit Quote'}
           </Button>
         </View>
       </ScrollView>
@@ -165,4 +265,28 @@ const styles = StyleSheet.create({
   },
   bLabel: { fontSize: 13, width: '60%' },
   bValue: { fontSize: 14, width: '38%', textAlign: 'right' },
+  attachSection: { gap: 8 },
+  attachLabel: { fontSize: 14, fontWeight: '600' },
+  attachHint: { fontSize: 12 },
+  attachButtons: { flexDirection: 'row', gap: 10 },
+  attachBtn: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    gap: 6,
+  },
+  attachBtnIcon: { fontSize: 24 },
+  attachBtnLabel: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  attachedFile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    padding: 12,
+  },
+  attachedIcon: { fontSize: 22 },
+  attachedName: { flex: 1, fontSize: 13 },
+  removeBtn: { fontSize: 18, fontWeight: '700', paddingHorizontal: 4 },
 });
