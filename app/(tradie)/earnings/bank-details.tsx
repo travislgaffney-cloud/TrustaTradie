@@ -68,7 +68,7 @@ export default function BankDetailsScreen() {
         <View style={{ width: 60 }} />
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={[styles.note, { backgroundColor: '#dbeafe', borderColor: '#93c5fd' }]}>
           <Text style={styles.noteText}>

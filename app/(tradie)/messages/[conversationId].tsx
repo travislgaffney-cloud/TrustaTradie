@@ -23,7 +23,7 @@ export default function TradieChatScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={[styles.navBar, { borderBottomColor: colors.border }]}>
           <Pressable onPress={() => router.back()}>
             <Text style={[styles.back, { color: colors.tint }]}>← Back</Text>

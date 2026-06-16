@@ -80,7 +80,7 @@ export default function EditProfileScreen() {
         <Text style={[styles.navTitle, { color: colors.text }]}>Edit Profile</Text>
         <View style={{ width: 60 }} />
       </View>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.form}>
           <Controller control={control} name="fullName" render={({ field }) => (
