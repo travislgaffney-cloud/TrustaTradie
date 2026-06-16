@@ -1,5 +1,5 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import React from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import React, { useCallback } from 'react';
 import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { JobCategoryBadge } from '@/components/jobs/job-category-badge';
 import { JobStatusBadge } from '@/components/jobs/job-status-badge';
@@ -15,8 +15,10 @@ export default function CustomerJobDetailScreen() {
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
-  const { job, loading } = useJob(jobId);
-  const { quotes } = useJobQuotes(jobId);
+  const { job, loading, refresh: refreshJob } = useJob(jobId);
+  const { quotes, refresh: refreshQuotes } = useJobQuotes(jobId);
+
+  useFocusEffect(useCallback(() => { refreshJob(); refreshQuotes(); }, []));
 
   if (loading) return <LoadingSpinner full />;
   if (!job) return null;
@@ -62,12 +64,12 @@ export default function CustomerJobDetailScreen() {
           </Card>
 
           {/* Quotes CTA */}
-          {pendingQuotes.length > 0 ? (
+          {quotes.length > 0 ? (
             <Button
               size="lg"
               onPress={() => router.push(`/(customer)/jobs/${jobId}/quotes`)}
             >
-              View {pendingQuotes.length} Quote{pendingQuotes.length !== 1 ? 's' : ''} →
+              View {quotes.length} Quote{quotes.length !== 1 ? 's' : ''} →
             </Button>
           ) : job.status === 'open' ? (
             <Card style={[styles.waitingCard, { borderColor: colors.border }]}>

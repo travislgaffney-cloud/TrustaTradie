@@ -10,13 +10,9 @@ export function useJobQuotes(jobId: string) {
   useEffect(() => {
     fetchQuotes();
     const channel = supabase
-      .channel(`quotes:${jobId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'quotes',
-        filter: `job_id=eq.${jobId}`,
-      }, () => fetchQuotes())
+      .channel(`quotes:job:${jobId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'quotes', filter: `job_id=eq.${jobId}` }, () => fetchQuotes())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'quotes', filter: `job_id=eq.${jobId}` }, () => fetchQuotes())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [jobId]);
@@ -43,14 +39,21 @@ export function useMyQuotes() {
   useEffect(() => {
     if (!user) return;
     fetchQuotes();
+    const channel = supabase
+      .channel(`quotes:tradie:${user.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'quotes', filter: `tradie_id=eq.${user.id}` }, () => fetchQuotes())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'quotes', filter: `tradie_id=eq.${user.id}` }, () => fetchQuotes())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   async function fetchQuotes() {
+    if (!user) return;
     setLoading(true);
     const { data } = await supabase
       .from('quotes')
       .select('*, job:jobs(*)')
-      .eq('tradie_id', user!.id)
+      .eq('tradie_id', user.id)
       .order('created_at', { ascending: false });
     setQuotes((data as Quote[]) ?? []);
     setLoading(false);
