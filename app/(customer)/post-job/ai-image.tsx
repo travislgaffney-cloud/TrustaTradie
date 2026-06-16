@@ -1,44 +1,55 @@
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { generateJobImage } from '@/lib/openai';
 import { jobDraft } from './details';
 
-export default function PostJobAIImageScreen() {
+export default function PostJobAttachImageScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
-  const [prompt, setPrompt] = useState('');
-  const [generatedUrl, setGeneratedUrl] = useState<string | null>((jobDraft as { aiImageUrl?: string }).aiImageUrl ?? null);
-  const [generating, setGenerating] = useState(false);
+  const [imageUri, setImageUri] = useState<string | null>(
+    (jobDraft as { aiImageUrl?: string }).aiImageUrl ?? null
+  );
 
-  async function handleGenerate() {
-    if (!prompt.trim()) return;
-    setGenerating(true);
-    try {
-      const url = await generateJobImage(
-        `${prompt}. Style: realistic interior/exterior photo, South African home, bright and clear.`,
-        'draft'
-      );
-      setGeneratedUrl(url);
-      jobDraft.aiImageUrl = url;
-    } catch (_) {
-      // handle error gracefully
-    } finally {
-      setGenerating(false);
+  async function handleCamera() {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') return;
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+    if (!result.canceled && result.assets[0]) {
+      setImageUri(result.assets[0].uri);
+      jobDraft.aiImageUrl = result.assets[0].uri;
+    }
+  }
+
+  async function handleLibrary() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+    if (!result.canceled && result.assets[0]) {
+      setImageUri(result.assets[0].uri);
+      jobDraft.aiImageUrl = result.assets[0].uri;
     }
   }
 
@@ -55,49 +66,48 @@ export default function PostJobAIImageScreen() {
 
         <StepIndicator steps={4} current={2} />
 
-        <Text style={[styles.title, { color: colors.text }]}>Generate inspiration</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Attach an image</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Describe how you'd like the finished result to look. Our AI will generate a concept image to share with tradies.
+          Add a photo of the area or job that needs attention. This helps tradies give you a more accurate quote.
         </Text>
 
-        <View style={[styles.inputBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <TextInput
-            style={[styles.input, { color: colors.text }]}
-            placeholder="e.g. Modern tiled bathroom with grey tiles, wall-hung vanity and frameless shower..."
-            placeholderTextColor={colors.textSecondary}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-            value={prompt}
-            onChangeText={setPrompt}
-          />
-        </View>
-
-        <Button onPress={handleGenerate} loading={generating} disabled={!prompt.trim() || generating}>
-          ✨ Generate Image
-        </Button>
-
-        {generating && (
-          <View style={styles.loadingBox}>
-            <ActivityIndicator color={Brand.primary} size="large" />
-            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-              Generating your image... this takes ~15 seconds
-            </Text>
-          </View>
-        )}
-
-        {generatedUrl && !generating && (
+        {imageUri ? (
           <View style={styles.imageWrapper}>
-            <Image source={{ uri: generatedUrl }} style={styles.image} />
-            <Text style={[styles.imageCaption, { color: colors.textSecondary }]}>
-              AI-generated concept · This will be shared with tradies
+            <Image source={{ uri: imageUri }} style={styles.image} />
+            <Pressable onPress={() => { setImageUri(null); jobDraft.aiImageUrl = undefined; }}>
+              <Text style={[styles.removeText, { color: colors.error }]}>Remove photo</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={[styles.placeholder, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={styles.placeholderIcon}>📷</Text>
+            <Text style={[styles.placeholderText, { color: colors.textSecondary }]}>
+              No photo attached yet
             </Text>
           </View>
         )}
+
+        <View style={styles.actions}>
+          <Pressable
+            onPress={handleCamera}
+            style={[styles.actionBtn, { backgroundColor: Brand.secondary }]}
+          >
+            <Text style={styles.actionIcon}>📸</Text>
+            <Text style={styles.actionLabel}>Take Photo</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleLibrary}
+            style={[styles.actionBtn, { backgroundColor: Brand.secondary }]}
+          >
+            <Text style={styles.actionIcon}>🖼️</Text>
+            <Text style={styles.actionLabel}>Camera Roll</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.footer}>
           <Button size="lg" onPress={handleNext}>
-            {generatedUrl ? 'Continue →' : 'Skip this step →'}
+            {imageUri ? 'Continue →' : 'Skip this step →'}
           </Button>
         </View>
       </ScrollView>
@@ -112,17 +122,29 @@ const styles = StyleSheet.create({
   backText: { fontSize: 16 },
   title: { fontSize: 24, fontWeight: '800' },
   subtitle: { fontSize: 14, lineHeight: 20 },
-  inputBox: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 14,
-    minHeight: 110,
+  placeholder: {
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    height: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
   },
-  input: { fontSize: 15, lineHeight: 22, minHeight: 80 },
-  loadingBox: { alignItems: 'center', gap: 12, padding: 20 },
-  loadingText: { fontSize: 14, textAlign: 'center' },
-  imageWrapper: { gap: 8, alignItems: 'center' },
+  placeholderIcon: { fontSize: 40 },
+  placeholderText: { fontSize: 14 },
+  imageWrapper: { gap: 10, alignItems: 'center' },
   image: { width: '100%', height: 220, borderRadius: 14, resizeMode: 'cover' },
-  imageCaption: { fontSize: 12, textAlign: 'center' },
-  footer: { marginTop: 'auto', paddingTop: 16 },
+  removeText: { fontSize: 14, fontWeight: '600' },
+  actions: { flexDirection: 'row', gap: 12 },
+  actionBtn: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 20,
+    alignItems: 'center',
+    gap: 8,
+  },
+  actionIcon: { fontSize: 28 },
+  actionLabel: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  footer: { marginTop: 'auto', paddingTop: 8 },
 });

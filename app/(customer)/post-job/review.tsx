@@ -100,7 +100,7 @@ export default function PostJobReviewScreen() {
         <View style={[styles.escrowNote, { backgroundColor: '#fef9c3', borderColor: '#fde047' }]}>
           <Text style={styles.escrowTitle}>🔒 Trust-a-Tradie Escrow Protection</Text>
           <Text style={styles.escrowText}>
-            When you accept a quote, you pay the full amount securely to Trust-a-Tradie. We only release payment to the tradie once you confirm the job is complete. Our 5% service fee covers this protection.
+            When you accept a quote, you pay the full amount securely to Trust-a-Tradie. We only release payment to the tradie once you confirm the job is complete.
           </Text>
         </View>
 
