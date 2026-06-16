@@ -89,7 +89,7 @@ export default function TradieProfileScreen() {
           + Manage Portfolio
         </Button>
 
-        <Button variant="danger" onPress={() => supabase.auth.signOut()}>Sign Out</Button>
+        <Button variant="danger" onPress={async () => { await supabase.auth.signOut(); router.replace('/(auth)/welcome'); }}>Sign Out</Button>
       </ScrollView>
     </SafeAreaView>
   );

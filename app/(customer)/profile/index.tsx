@@ -31,6 +31,7 @@ export default function CustomerProfileScreen() {
 
   async function handleSignOut() {
     await supabase.auth.signOut();
+    router.replace('/(auth)/welcome');
   }
 
   if (!profile) return null;

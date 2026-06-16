@@ -15,6 +15,7 @@ export default function CustomerSettingsScreen() {
   async function handleSignOut() {
     await clearBiometricCredentials();
     await supabase.auth.signOut();
+    router.replace('/(auth)/welcome');
   }
 
   return (
