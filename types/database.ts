@@ -107,12 +107,14 @@ export interface JobImage {
 
 export interface Quote {
   id: string;
+  quote_number: string;
   job_id: string;
   tradie_id: string;
   amount: number;
   includes_vat: boolean;
   message: string | null;
   timeline_days: number | null;
+  quote_document_url: string | null;
   status: QuoteStatus;
   accepted_at: string | null;
   created_at: string;

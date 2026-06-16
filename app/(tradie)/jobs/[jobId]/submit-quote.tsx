@@ -108,7 +108,7 @@ export default function SubmitQuoteScreen() {
         timelineDays: Number(data.timelineDays),
         quoteDocumentUrl,
       });
-      router.replace('/(tradie)/my-quotes');
+      router.replace('/(tradie)/my-quotes/index' as never);
     } catch (e) {
       console.error(e);
     } finally {
