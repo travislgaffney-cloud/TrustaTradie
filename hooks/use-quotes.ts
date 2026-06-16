@@ -85,7 +85,7 @@ export async function submitQuote(params: {
 
   const { data, error } = await supabase
     .from('quotes')
-    .insert({
+    .upsert({
       job_id: params.jobId,
       tradie_id: params.tradieId,
       amount: params.amount,
@@ -94,7 +94,7 @@ export async function submitQuote(params: {
       timeline_days: params.timelineDays,
       quote_document_url: params.quoteDocumentUrl ?? null,
       status: 'pending',
-    })
+    }, { onConflict: 'job_id,tradie_id', ignoreDuplicates: false })
     .select()
     .single<Quote>();
 

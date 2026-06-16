@@ -3,7 +3,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { z } from 'zod';
@@ -39,10 +39,32 @@ export default function SubmitQuoteScreen() {
   const [includesVat, setIncludesVat] = useState(true);
   const [attachment, setAttachment] = useState<AttachedFile | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [existingQuoteNumber, setExistingQuoteNumber] = useState<string | null>(null);
 
-  const { control, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
+  const { control, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('quotes')
+      .select('quote_number, amount, message, timeline_days, includes_vat')
+      .eq('job_id', jobId)
+      .eq('tradie_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setExistingQuoteNumber(data.quote_number);
+          setIncludesVat(data.includes_vat ?? true);
+          reset({
+            amount: data.amount?.toString() ?? '',
+            message: data.message ?? '',
+            timelineDays: data.timeline_days?.toString() ?? '',
+          });
+        }
+      });
+  }, [jobId, user]);
 
   const amount = Number(watch('amount') ?? 0);
   const tradiePayout = amount * (1 - PLATFORM_FEE);
@@ -122,7 +144,9 @@ export default function SubmitQuoteScreen() {
         <Pressable onPress={() => router.back()}>
           <Text style={[styles.back, { color: colors.tint }]}>← Back</Text>
         </Pressable>
-        <Text style={[styles.navTitle, { color: colors.text }]}>Submit Quote</Text>
+        <Text style={[styles.navTitle, { color: colors.text }]}>
+          {existingQuoteNumber ? 'Update Quote' : 'Submit Quote'}
+        </Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -222,8 +246,16 @@ export default function SubmitQuoteScreen() {
             )}
           </View>
 
+          {existingQuoteNumber && (
+            <View style={[styles.updateNote, { backgroundColor: '#fef9c3', borderColor: '#fde047' }]}>
+              <Text style={styles.updateNoteText}>
+                ✏️ You already submitted {existingQuoteNumber}. Saving will update your existing quote.
+              </Text>
+            </View>
+          )}
+
           <Button size="lg" loading={loading || uploading} onPress={handleSubmit(onSubmit)}>
-            {uploading ? 'Uploading...' : 'Submit Quote'}
+            {uploading ? 'Uploading...' : existingQuoteNumber ? 'Update Quote' : 'Submit Quote'}
           </Button>
         </View>
       </ScrollView>
@@ -278,6 +310,8 @@ const styles = StyleSheet.create({
   },
   attachBtnIcon: { fontSize: 24 },
   attachBtnLabel: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  updateNote: { borderRadius: 10, borderWidth: 1, padding: 12 },
+  updateNoteText: { fontSize: 13, color: '#854d0e', lineHeight: 18 },
   attachedFile: {
     flexDirection: 'row',
     alignItems: 'center',
