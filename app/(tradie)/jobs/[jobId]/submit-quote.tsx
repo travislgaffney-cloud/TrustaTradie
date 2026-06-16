@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
