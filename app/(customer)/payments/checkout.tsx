@@ -37,7 +37,7 @@ export default function CheckoutScreen() {
 
     const notifyUrl = `${SUPABASE_URL}/functions/v1/payfast-itn`;
     const { data: { user: authUser } } = await supabase.auth.getUser();
-    const url = buildPayFastUrl({
+    const url = await buildPayFastUrl({
       paymentId: payment.id,
       amountRands: payment.amount_total,
       itemName: `Trust-a-Tradie: ${(payment.job as unknown as Record<string, unknown>)?.title ?? 'Job Payment'}`,

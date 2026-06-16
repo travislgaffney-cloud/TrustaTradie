@@ -1,4 +1,4 @@
-import CryptoJS from 'crypto-js';
+import * as Crypto from 'expo-crypto';
 
 const MERCHANT_ID = process.env.EXPO_PUBLIC_PAYFAST_MERCHANT_ID ?? '';
 const MERCHANT_KEY = process.env.EXPO_PUBLIC_PAYFAST_MERCHANT_KEY ?? '';
@@ -18,7 +18,7 @@ export interface PayFastParams {
   notifyUrl: string;
 }
 
-export function buildPayFastUrl(params: PayFastParams): string {
+export async function buildPayFastUrl(params: PayFastParams): Promise<string> {
   const data: Record<string, string> = {
     merchant_id: MERCHANT_ID,
     merchant_key: MERCHANT_KEY,
@@ -33,24 +33,19 @@ export function buildPayFastUrl(params: PayFastParams): string {
     item_name: params.itemName,
   };
 
-  // Remove empty values
   Object.keys(data).forEach((k) => {
     if (!data[k]) delete data[k];
   });
 
-  data.signature = generateMd5Signature(data);
+  const str = Object.entries(data)
+    .map(([k, v]) => `${k}=${encodeURIComponent(v).replace(/%20/g, '+')}`)
+    .join('&');
+
+  data.signature = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.MD5, str);
 
   const query = Object.entries(data)
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join('&');
 
   return `${BASE_URL}?${query}`;
-}
-
-function generateMd5Signature(data: Record<string, string>): string {
-  const str = Object.entries(data)
-    .map(([k, v]) => `${k}=${encodeURIComponent(v).replace(/%20/g, '+')}`)
-    .join('&');
-
-  return CryptoJS.MD5(str).toString(CryptoJS.enc.Hex);
 }
