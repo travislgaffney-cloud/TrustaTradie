@@ -159,7 +159,7 @@ export interface Rating {
 
 export interface Conversation {
   id: string;
-  job_id: string;
+  job_id: string | null;
   customer_id: string;
   tradie_id: string;
   last_message_at: string | null;

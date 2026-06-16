@@ -3,6 +3,27 @@ import { supabase } from '@/lib/supabase';
 import type { Conversation, Message } from '@/types/database';
 import { useAuthStore } from '@/store/auth-store';
 
+export async function startDirectConversation(customerId: string, tradieId: string): Promise<string> {
+  const { data: existing } = await supabase
+    .from('conversations')
+    .select('id')
+    .eq('customer_id', customerId)
+    .eq('tradie_id', tradieId)
+    .is('job_id', null)
+    .maybeSingle();
+
+  if (existing) return existing.id;
+
+  const { data, error } = await supabase
+    .from('conversations')
+    .insert({ customer_id: customerId, tradie_id: tradieId, job_id: null })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return data.id;
+}
+
 export function useConversations() {
   const { user } = useAuthStore();
   const [conversations, setConversations] = useState<Conversation[]>([]);

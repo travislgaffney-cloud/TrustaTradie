@@ -50,6 +50,24 @@ export default function CustomerLayout() {
         }}
       />
       <Tabs.Screen
+        name="messages/index"
+        options={{
+          title: 'Chats',
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon name={focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'} focused={focused} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="tradies/index"
+        options={{
+          title: 'Tradies',
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon name={focused ? 'people' : 'people-outline'} focused={focused} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="notifications"
         options={{
           title: 'Alerts',
@@ -60,7 +78,6 @@ export default function CustomerLayout() {
         }}
       />
       {/* Hidden routes — not shown in tab bar */}
-      <Tabs.Screen name="messages/index" options={{ href: null }} />
       <Tabs.Screen name="messages/[conversationId]" options={{ href: null }} />
       <Tabs.Screen name="profile/index" options={{ href: null }} />
       <Tabs.Screen name="profile/settings" options={{ href: null }} />

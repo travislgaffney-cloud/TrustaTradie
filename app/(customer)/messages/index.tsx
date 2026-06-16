@@ -5,7 +5,7 @@ import { FlatList, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, Vi
 import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Colors } from '@/constants/theme';
+import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useConversations } from '@/hooks/use-messages';
 import { useAuthStore } from '@/store/auth-store';
@@ -13,19 +13,32 @@ import { useAuthStore } from '@/store/auth-store';
 export default function CustomerMessagesScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
   const { conversations, loading, refresh } = useConversations();
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.title, { color: colors.text }]}>Messages</Text>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: Brand.secondary }]}>
+        <View style={styles.headerTop}>
+          <View style={styles.headerTextWrap}>
+            <Text style={styles.greeting}>Chats</Text>
+            <Text style={styles.headerSubtitle}>Your conversations with tradies</Text>
+          </View>
+          <Pressable onPress={() => router.push('/(customer)/profile')}>
+            <Avatar uri={profile?.avatar_url} name={profile?.full_name} size={36} color="#38BDF8" />
+          </Pressable>
+        </View>
       </View>
 
       {loading ? (
         <LoadingSpinner full />
       ) : conversations.length === 0 ? (
-        <EmptyState icon="💬" title="No messages yet" description="When you accept a quote, you can chat with the tradie here." />
+        <EmptyState
+          icon="💬"
+          title="No chats yet"
+          description="Find a tradie nearby and tap Message to start a conversation."
+        />
       ) : (
         <FlatList
           data={conversations}
@@ -42,7 +55,7 @@ export default function CustomerMessagesScreen() {
                 <View style={styles.itemInfo}>
                   <Text style={[styles.name, { color: colors.text }]}>{other?.full_name}</Text>
                   <Text style={[styles.jobTitle, { color: colors.textSecondary }]} numberOfLines={1}>
-                    {item.job?.title ?? 'Job'}
+                    {item.job?.title ?? 'Direct message'}
                   </Text>
                 </View>
                 {item.last_message_at && (
@@ -62,11 +75,20 @@ export default function CustomerMessagesScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingTop: 20,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    gap: 4,
   },
-  title: { fontSize: 22, fontWeight: '800' },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  headerTextWrap: { flex: 1, gap: 4 },
+  greeting: { fontSize: 24, fontWeight: '800', color: '#fff' },
+  headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.85)' },
   item: {
     flexDirection: 'row',
     alignItems: 'center',

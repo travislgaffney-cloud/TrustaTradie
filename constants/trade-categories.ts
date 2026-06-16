@@ -4,7 +4,9 @@ export type TradeCategory =
   | 'plumbing'
   | 'landscaping'
   | 'roofing'
-  | 'tiling';
+  | 'tiling'
+  | 'flooring'
+  | 'carpentry';
 
 export const TRADE_CATEGORIES: {
   value: TradeCategory;
@@ -47,6 +49,18 @@ export const TRADE_CATEGORIES: {
     label: 'Tiling',
     icon: '🔲',
     description: 'Floor tiles, wall tiles, grouting',
+  },
+  {
+    value: 'flooring',
+    label: 'Flooring',
+    icon: '🪵',
+    description: 'Hardwood, laminate, vinyl, polishing',
+  },
+  {
+    value: 'carpentry',
+    label: 'Carpentry',
+    icon: '🪚',
+    description: 'Cupboards, built-ins, furniture, woodwork',
   },
 ];
 
