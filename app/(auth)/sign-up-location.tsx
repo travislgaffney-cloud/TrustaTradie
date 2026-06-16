@@ -16,10 +16,13 @@ import { StepIndicator } from '@/components/ui/step-indicator';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/store/auth-store';
+import type { Profile } from '@/types/database';
 
 export default function SignUpLocationScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
+  const { setProfile, profile } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [detecting, setDetecting] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -76,8 +79,14 @@ export default function SignUpLocationScreen() {
 
     await supabase.from('profiles').update(updateData).eq('id', user.id);
 
+    const { data: updated } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single<Profile>();
+
+    if (updated) setProfile(updated);
     setLoading(false);
-    // Auth state change will handle redirect
   }
 
   return (
