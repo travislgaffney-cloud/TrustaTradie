@@ -21,8 +21,6 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 const schema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
   description: z.string().min(20, 'Please describe your job in more detail'),
-  budgetMin: z.string().optional(),
-  budgetMax: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -54,8 +52,6 @@ export default function PostJobDetailsScreen() {
     defaultValues: {
       title: jobDraft.title ?? '',
       description: jobDraft.description ?? '',
-      budgetMin: jobDraft.budgetMin?.toString() ?? '',
-      budgetMax: jobDraft.budgetMax?.toString() ?? '',
     },
   });
 
@@ -66,8 +62,6 @@ export default function PostJobDetailsScreen() {
       title: data.title,
       description: data.description,
       category,
-      budgetMin: data.budgetMin ? Number(data.budgetMin) : undefined,
-      budgetMax: data.budgetMax ? Number(data.budgetMax) : undefined,
     };
     router.push('/(customer)/post-job/ai-image');
   }
@@ -117,20 +111,6 @@ export default function PostJobDetailsScreen() {
             <Input label="Description *" placeholder="Describe exactly what needs to be done..." multiline numberOfLines={5} textAlignVertical="top" style={{ minHeight: 110 }} error={errors.description?.message} onChangeText={field.onChange} value={field.value} />
           )} />
 
-          <Text style={[styles.sectionLabel, { color: colors.text }]}>Budget (optional)</Text>
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Controller control={control} name="budgetMin" render={({ field }) => (
-                <Input label="Min (R)" keyboardType="numeric" placeholder="500" onChangeText={field.onChange} value={field.value} />
-              )} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Controller control={control} name="budgetMax" render={({ field }) => (
-                <Input label="Max (R)" keyboardType="numeric" placeholder="2000" onChangeText={field.onChange} value={field.value} />
-              )} />
-            </View>
-          </View>
-
           <Button size="lg" onPress={handleSubmit(onSubmit)} disabled={!category}>
             Continue →
           </Button>
@@ -161,5 +141,4 @@ const styles = StyleSheet.create({
   chipLabel: { fontSize: 14, fontWeight: '500' },
   catError: { fontSize: 12, marginTop: -4 },
   form: { gap: 14 },
-  row: { flexDirection: 'row', gap: 12 },
 });
