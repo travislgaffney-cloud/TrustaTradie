@@ -29,7 +29,7 @@ export default function RootLayout() {
           ) : (
             <Stack.Screen name="(customer)" />
           )}
-          <Stack.Screen name="tradie/[tradieId]" options={{ headerShown: true, title: 'Tradie Profile' }} />
+          <Stack.Screen name="tradie/[tradieId]" options={{ headerShown: false }} />
           <Stack.Screen name="rate/[jobId]" options={{ headerShown: true, title: 'Rate This Job', presentation: 'modal' }} />
         </Stack>
         <StatusBar style="auto" />
