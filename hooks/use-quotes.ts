@@ -102,6 +102,31 @@ export async function submitQuote(params: {
     .single<Quote>();
 
   if (error) throw error;
+
+  // Notify the customer that a quote has arrived
+  if (job) {
+    const { data: jobDetail } = await supabase
+      .from('jobs')
+      .select('title')
+      .eq('id', params.jobId)
+      .single();
+
+    const { data: tradieProfile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', params.tradieId)
+      .single();
+
+    await supabase.from('notifications').insert({
+      user_id: job.customer_id,
+      type: 'new_quote_received',
+      title: 'New Quote Received',
+      body: `${tradieProfile?.full_name ?? 'A tradie'} submitted a quote for "${jobDetail?.title ?? 'your job'}" — R${params.amount.toLocaleString()}`,
+      data: { job_id: params.jobId, quote_id: data.id },
+      is_read: false,
+    });
+  }
+
   return data;
 }
 

@@ -1,11 +1,13 @@
 import { format } from 'date-fns';
+import { router } from 'expo-router';
 import React, { useEffect } from 'react';
-import { FlatList, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Colors } from '@/constants/theme';
+import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNotifications } from '@/hooks/use-notifications';
+import type { Notification } from '@/types/database';
 
 const TYPE_ICONS: Record<string, string> = {
   new_job_nearby: '📍',
@@ -18,6 +20,27 @@ const TYPE_ICONS: Record<string, string> = {
   rating_received: '⭐',
 };
 
+function handleNotificationPress(n: Notification) {
+  const data = n.data as Record<string, string> | null;
+  switch (n.type) {
+    case 'new_quote_received':
+      if (data?.job_id) router.push(`/(customer)/jobs/${data.job_id}/quotes` as never);
+      break;
+    case 'quote_accepted':
+    case 'job_completed':
+      if (data?.job_id) router.push(`/(customer)/jobs/${data.job_id}` as never);
+      break;
+    case 'new_message':
+      if (data?.conversation_id) router.push(`/(customer)/messages/${data.conversation_id}` as never);
+      break;
+    case 'payment_released':
+      router.push('/(customer)/payments' as never);
+      break;
+    default:
+      break;
+  }
+}
+
 export default function CustomerNotificationsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
@@ -29,8 +52,9 @@ export default function CustomerNotificationsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.title, { color: colors.text }]}>Notifications</Text>
+      <View style={[styles.header, { backgroundColor: Brand.secondary }]}>
+        <Text style={styles.title}>Alerts</Text>
+        <Text style={styles.subtitle}>Tap a notification to take action</Text>
       </View>
 
       {loading ? (
@@ -41,12 +65,15 @@ export default function CustomerNotificationsScreen() {
         <FlatList
           data={notifications}
           keyExtractor={(n) => n.id}
-          refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
+          refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={Brand.primary} />}
           renderItem={({ item }) => (
-            <View style={[
-              styles.item,
-              { borderBottomColor: colors.border, backgroundColor: item.is_read ? 'transparent' : colors.surface },
-            ]}>
+            <Pressable
+              onPress={() => handleNotificationPress(item)}
+              style={[
+                styles.item,
+                { borderBottomColor: colors.border, backgroundColor: item.is_read ? 'transparent' : colors.surface },
+              ]}
+            >
               <Text style={styles.icon}>{TYPE_ICONS[item.type] ?? '🔔'}</Text>
               <View style={styles.itemContent}>
                 <Text style={[styles.itemTitle, { color: colors.text }]}>{item.title}</Text>
@@ -55,8 +82,8 @@ export default function CustomerNotificationsScreen() {
                   {format(new Date(item.created_at), 'dd MMM · HH:mm')}
                 </Text>
               </View>
-              {!item.is_read && <View style={[styles.dot, { backgroundColor: colors.tint }]} />}
-            </View>
+              {!item.is_read && <View style={[styles.dot, { backgroundColor: Brand.primary }]} />}
+            </Pressable>
           )}
         />
       )}
@@ -66,8 +93,9 @@ export default function CustomerNotificationsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  header: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
-  title: { fontSize: 22, fontWeight: '800' },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20, gap: 4 },
+  title: { fontSize: 22, fontWeight: '800', color: '#fff' },
+  subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.75)' },
   item: {
     flexDirection: 'row',
     alignItems: 'flex-start',
