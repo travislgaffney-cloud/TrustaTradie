@@ -67,7 +67,7 @@ export function useMyQuotes() {
     setLoading(true);
     const { data, error } = await supabase
       .from('quotes')
-      .select('*, job:jobs(*)')
+      .select('*, job:jobs!quotes_job_id_fkey(*)')
       .eq('tradie_id', userId)
       .order('created_at', { ascending: false });
     if (error) console.error('[useMyQuotes] fetch error:', error.message, error.details);
