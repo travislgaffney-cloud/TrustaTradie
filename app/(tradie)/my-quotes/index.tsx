@@ -18,7 +18,7 @@ const STATUS_COLOR: Record<string, { bg: string; text: string }> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  pending:   'Pending',
+  pending:   'Submitted',
   accepted:  'Accepted ✅',
   rejected:  'Rejected',
   withdrawn: 'Withdrawn',

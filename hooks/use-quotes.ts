@@ -180,4 +180,21 @@ export async function acceptQuote(quoteId: string, jobId: string): Promise<void>
     .eq('job_id', jobId)
     .neq('id', quoteId)
     .eq('status', 'pending');
+
+  // Notify the tradie their quote was accepted
+  const [{ data: quote }, { data: job }] = await Promise.all([
+    supabase.from('quotes').select('tradie_id').eq('id', quoteId).single(),
+    supabase.from('jobs').select('title').eq('id', jobId).single(),
+  ]);
+
+  if (quote && job) {
+    await supabase.from('notifications').insert({
+      user_id: quote.tradie_id,
+      type: 'quote_accepted',
+      title: 'Quote Accepted!',
+      body: `Your quote for "${job.title}" was accepted. Get ready to start the job!`,
+      data: { job_id: jobId, quote_id: quoteId },
+      is_read: false,
+    });
+  }
 }
