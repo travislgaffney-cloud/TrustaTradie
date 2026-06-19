@@ -102,20 +102,14 @@ export async function submitQuote(params: {
     .single<Quote>();
 
   if (error) throw error;
+  if (!data) throw new Error('Quote upsert returned no data');
 
   // Notify the customer that a quote has arrived
   if (job) {
-    const { data: jobDetail } = await supabase
-      .from('jobs')
-      .select('title')
-      .eq('id', params.jobId)
-      .single();
-
-    const { data: tradieProfile } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', params.tradieId)
-      .single();
+    const [{ data: jobDetail }, { data: tradieProfile }] = await Promise.all([
+      supabase.from('jobs').select('title').eq('id', params.jobId).single(),
+      supabase.from('profiles').select('full_name').eq('id', params.tradieId).single(),
+    ]);
 
     await supabase.from('notifications').insert({
       user_id: job.customer_id,

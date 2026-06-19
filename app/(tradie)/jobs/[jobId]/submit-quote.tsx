@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -130,9 +130,9 @@ export default function SubmitQuoteScreen() {
         timelineDays: Number(data.timelineDays),
         quoteDocumentUrl,
       });
-      router.replace('/(tradie)/my-quotes/index' as never);
-    } catch (e) {
-      console.error(e);
+      router.replace('/(tradie)/my-quotes' as never);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to submit quote. Please try again.');
     } finally {
       setLoading(false);
     }
