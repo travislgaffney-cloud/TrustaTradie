@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Quote } from '@/types/database';
 import { useAuthStore } from '@/store/auth-store';
@@ -6,15 +6,30 @@ import { useAuthStore } from '@/store/auth-store';
 export function useJobQuotes(jobId: string) {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
+    if (!jobId) return;
     fetchQuotes();
-    const channel = supabase
+
+    // Remove any previous channel before creating a new one
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    channelRef.current = supabase
       .channel(`quotes:job:${jobId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'quotes', filter: `job_id=eq.${jobId}` }, () => fetchQuotes())
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'quotes', filter: `job_id=eq.${jobId}` }, () => fetchQuotes())
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
   }, [jobId]);
 
   async function fetchQuotes() {
@@ -33,19 +48,34 @@ export function useJobQuotes(jobId: string) {
 
 export function useMyQuotes() {
   const { user } = useAuthStore();
+  const userId = user?.id;
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     fetchQuotes();
-    const channel = supabase
-      .channel(`quotes:tradie:${user.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'quotes', filter: `tradie_id=eq.${user.id}` }, () => fetchQuotes())
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'quotes', filter: `tradie_id=eq.${user.id}` }, () => fetchQuotes())
+
+    // Remove any previous channel before creating a new one
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    channelRef.current = supabase
+      .channel(`quotes:tradie:${userId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'quotes', filter: `tradie_id=eq.${userId}` }, () => fetchQuotes())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'quotes', filter: `tradie_id=eq.${userId}` }, () => fetchQuotes())
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user]);
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [userId]); // stable string — won't re-run on object reference changes
 
   async function fetchQuotes() {
     if (!user) return;
