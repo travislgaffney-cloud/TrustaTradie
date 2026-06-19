@@ -84,5 +84,13 @@ export function useNotifications() {
     setUnreadCount(0);
   }
 
-  return { notifications, unreadCount, loading, markAllRead, refresh: fetch };
+  async function deleteNotification(id: string) {
+    const target = notifications.find((n) => n.id === id);
+    const { error } = await supabase.from('notifications').delete().eq('id', id);
+    if (error) { console.error('[deleteNotification] error:', error.message); return; }
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    if (target && !target.is_read) setUnreadCount((c) => Math.max(0, c - 1));
+  }
+
+  return { notifications, unreadCount, loading, markAllRead, deleteNotification, refresh: fetch };
 }

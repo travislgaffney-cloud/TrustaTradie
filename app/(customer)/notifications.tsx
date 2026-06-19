@@ -1,7 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { router } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { FlatList, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Brand, Colors } from '@/constants/theme';
@@ -41,10 +43,62 @@ function handleNotificationPress(n: Notification) {
   }
 }
 
+function NotificationRow({
+  item,
+  onDelete,
+  colors,
+}: {
+  item: Notification;
+  onDelete: () => void;
+  colors: any;
+}) {
+  const swipeableRef = useRef<SwipeableMethods>(null);
+
+  const renderRightActions = useCallback(() => (
+    <Pressable
+      style={styles.deleteAction}
+      onPress={() => {
+        swipeableRef.current?.close();
+        onDelete();
+      }}
+    >
+      <Ionicons name="trash-outline" size={22} color="#fff" />
+      <Text style={styles.deleteLabel}>Delete</Text>
+    </Pressable>
+  ), [onDelete]);
+
+  return (
+    <ReanimatedSwipeable
+      ref={swipeableRef}
+      friction={2}
+      rightThreshold={72}
+      renderRightActions={renderRightActions}
+    >
+      <Pressable
+        onPress={() => handleNotificationPress(item)}
+        style={[
+          styles.item,
+          { borderBottomColor: colors.border, backgroundColor: item.is_read ? colors.background : colors.surface },
+        ]}
+      >
+        <Text style={styles.icon}>{TYPE_ICONS[item.type] ?? '🔔'}</Text>
+        <View style={styles.itemContent}>
+          <Text style={[styles.itemTitle, { color: colors.text }]}>{item.title}</Text>
+          <Text style={[styles.itemBody, { color: colors.textSecondary }]}>{item.body}</Text>
+          <Text style={[styles.itemTime, { color: colors.textSecondary }]}>
+            {format(new Date(item.created_at), 'dd MMM · HH:mm')}
+          </Text>
+        </View>
+        {!item.is_read && <View style={[styles.dot, { backgroundColor: Brand.primary }]} />}
+      </Pressable>
+    </ReanimatedSwipeable>
+  );
+}
+
 export default function CustomerNotificationsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
-  const { notifications, loading, markAllRead, refresh } = useNotifications();
+  const { notifications, loading, markAllRead, deleteNotification, refresh } = useNotifications();
 
   useEffect(() => {
     markAllRead();
@@ -54,7 +108,7 @@ export default function CustomerNotificationsScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: Brand.secondary }]}>
         <Text style={styles.title}>Alerts</Text>
-        <Text style={styles.subtitle}>Tap a notification to take action</Text>
+        <Text style={styles.subtitle}>Swipe left to delete · Tap to take action</Text>
       </View>
 
       {loading ? (
@@ -67,23 +121,11 @@ export default function CustomerNotificationsScreen() {
           keyExtractor={(n) => n.id}
           refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={Brand.primary} />}
           renderItem={({ item }) => (
-            <Pressable
-              onPress={() => handleNotificationPress(item)}
-              style={[
-                styles.item,
-                { borderBottomColor: colors.border, backgroundColor: item.is_read ? 'transparent' : colors.surface },
-              ]}
-            >
-              <Text style={styles.icon}>{TYPE_ICONS[item.type] ?? '🔔'}</Text>
-              <View style={styles.itemContent}>
-                <Text style={[styles.itemTitle, { color: colors.text }]}>{item.title}</Text>
-                <Text style={[styles.itemBody, { color: colors.textSecondary }]}>{item.body}</Text>
-                <Text style={[styles.itemTime, { color: colors.textSecondary }]}>
-                  {format(new Date(item.created_at), 'dd MMM · HH:mm')}
-                </Text>
-              </View>
-              {!item.is_read && <View style={[styles.dot, { backgroundColor: Brand.primary }]} />}
-            </Pressable>
+            <NotificationRow
+              item={item}
+              onDelete={() => deleteNotification(item.id)}
+              colors={colors}
+            />
           )}
         />
       )}
@@ -110,4 +152,12 @@ const styles = StyleSheet.create({
   itemBody: { fontSize: 13, lineHeight: 18 },
   itemTime: { fontSize: 11, marginTop: 2 },
   dot: { width: 8, height: 8, borderRadius: 4, marginTop: 6 },
+  deleteAction: {
+    backgroundColor: '#ef4444',
+    width: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  deleteLabel: { color: '#fff', fontSize: 11, fontWeight: '700' },
 });
