@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from './supabase';
 
 type Bucket = 'avatars' | 'job-images' | 'portfolio' | 'documents' | 'chat-attachments' | 'completion-photos';
@@ -10,7 +10,7 @@ export async function uploadFile(
   contentType: string
 ): Promise<string> {
   const base64 = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64',
   });
 
   const arrayBuffer = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
