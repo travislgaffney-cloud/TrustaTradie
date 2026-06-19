@@ -1,7 +1,8 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Redirect, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuth } from '@/hooks/use-auth';
@@ -18,19 +19,21 @@ export default function RootLayout() {
   if (isLoading) return <AppLoadingScreen />;
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        {!session || !profile?.onboarding_complete ? (
-          <Stack.Screen name="(auth)" />
-        ) : profile.role === 'tradie' ? (
-          <Stack.Screen name="(tradie)" />
-        ) : (
-          <Stack.Screen name="(customer)" />
-        )}
-        <Stack.Screen name="tradie/[tradieId]" options={{ headerShown: true, title: 'Tradie Profile' }} />
-        <Stack.Screen name="rate/[jobId]" options={{ headerShown: true, title: 'Rate This Job', presentation: 'modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack screenOptions={{ headerShown: false }}>
+          {!session || !profile?.onboarding_complete ? (
+            <Stack.Screen name="(auth)" />
+          ) : profile.role === 'tradie' ? (
+            <Stack.Screen name="(tradie)" />
+          ) : (
+            <Stack.Screen name="(customer)" />
+          )}
+          <Stack.Screen name="tradie/[tradieId]" options={{ headerShown: true, title: 'Tradie Profile' }} />
+          <Stack.Screen name="rate/[jobId]" options={{ headerShown: true, title: 'Rate This Job', presentation: 'modal' }} />
+        </Stack>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
