@@ -31,7 +31,7 @@ export default function MyQuotesScreen() {
   const { quotes, loading, refresh } = useMyQuotes();
 
   // Refresh every time the tab is focused so new quotes appear immediately
-  useFocusEffect(useCallback(() => { refresh(); }, []));
+  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>

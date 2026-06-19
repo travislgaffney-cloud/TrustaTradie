@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Quote } from '@/types/database';
 import { useAuthStore } from '@/store/auth-store';
@@ -62,6 +62,19 @@ export function useMyQuotes() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const instanceId = useRef(Math.random().toString(36).slice(2, 7)).current;
 
+  const fetchQuotes = useCallback(async () => {
+    if (!userId) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('quotes')
+      .select('*, job:jobs(*)')
+      .eq('tradie_id', userId)
+      .order('created_at', { ascending: false });
+    if (error) console.error('[useMyQuotes] fetch error:', error.message, error.details);
+    setQuotes((data as Quote[]) ?? []);
+    setLoading(false);
+  }, [userId]);
+
   useEffect(() => {
     if (!userId) return;
     fetchQuotes();
@@ -73,8 +86,8 @@ export function useMyQuotes() {
 
     channelRef.current = supabase
       .channel(`quotes:tradie:${userId}:${instanceId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'quotes', filter: `tradie_id=eq.${userId}` }, () => fetchQuotes())
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'quotes', filter: `tradie_id=eq.${userId}` }, () => fetchQuotes())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'quotes', filter: `tradie_id=eq.${userId}` }, fetchQuotes)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'quotes', filter: `tradie_id=eq.${userId}` }, fetchQuotes)
       .subscribe();
 
     return () => {
@@ -83,19 +96,7 @@ export function useMyQuotes() {
         channelRef.current = null;
       }
     };
-  }, [userId]); // stable string — won't re-run on object reference changes
-
-  async function fetchQuotes() {
-    if (!user) return;
-    setLoading(true);
-    const { data } = await supabase
-      .from('quotes')
-      .select('*, job:jobs(*)')
-      .eq('tradie_id', user.id)
-      .order('created_at', { ascending: false });
-    setQuotes((data as Quote[]) ?? []);
-    setLoading(false);
-  }
+  }, [userId, fetchQuotes]);
 
   return { quotes, loading, refresh: fetchQuotes };
 }

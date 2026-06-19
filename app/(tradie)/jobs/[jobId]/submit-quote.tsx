@@ -130,7 +130,7 @@ export default function SubmitQuoteScreen() {
         timelineDays: Number(data.timelineDays),
         quoteDocumentUrl,
       });
-      router.replace('/(tradie)/my-quotes' as never);
+      router.navigate('/(tradie)/my-quotes' as never);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to submit quote. Please try again.');
     } finally {
