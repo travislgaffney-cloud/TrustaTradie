@@ -32,15 +32,6 @@ export default function WelcomeScreen() {
           </Text>
         </View>
 
-        {/* Feature pills */}
-        <View style={styles.pills}>
-          {['⚡ Electrical', '🔧 Plumbing', '🏗️ Building', '🌿 Landscaping', '🏠 Roofing', '🔲 Tiling'].map((f) => (
-            <View key={f} style={[styles.pill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={[styles.pillText, { color: colors.text }]}>{f}</Text>
-            </View>
-          ))}
-        </View>
-
         {/* Auth actions */}
         <View style={styles.actions}>
           <Text style={[styles.heading, { color: colors.text }]}>Get started</Text>
@@ -93,21 +84,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
-  pills: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    justifyContent: 'center',
-  },
-  pill: {
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  pillText: { fontSize: 13, fontWeight: '500' },
   actions: {
     paddingHorizontal: 24,
     paddingBottom: 32,
