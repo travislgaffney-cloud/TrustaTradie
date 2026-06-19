@@ -7,19 +7,20 @@ export function useJobQuotes(jobId: string) {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  // Unique suffix prevents channel name collision when multiple screens call this with same jobId
+  const instanceId = useRef(Math.random().toString(36).slice(2, 7)).current;
 
   useEffect(() => {
     if (!jobId) return;
     fetchQuotes();
 
-    // Remove any previous channel before creating a new one
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
     channelRef.current = supabase
-      .channel(`quotes:job:${jobId}`)
+      .channel(`quotes:job:${jobId}:${instanceId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'quotes', filter: `job_id=eq.${jobId}` }, () => fetchQuotes())
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'quotes', filter: `job_id=eq.${jobId}` }, () => fetchQuotes())
       .subscribe();
@@ -34,12 +35,19 @@ export function useJobQuotes(jobId: string) {
 
   async function fetchQuotes() {
     setLoading(true);
-    const { data } = await supabase
+    // tradie_profiles has no direct FK from quotes — nest it inside profiles join instead
+    const { data, error } = await supabase
       .from('quotes')
-      .select('*, tradie:profiles!quotes_tradie_id_fkey(*), tradie_profile:tradie_profiles(*)')
+      .select('*, tradie:profiles!quotes_tradie_id_fkey(*, tradie_profiles(*))')
       .eq('job_id', jobId)
       .order('created_at', { ascending: false });
-    setQuotes((data as Quote[]) ?? []);
+    if (error) console.error('[useJobQuotes] fetch error:', error.message, error.details);
+    // Hoist nested tradie_profiles to top-level tradie_profile so QuoteCard works unchanged
+    const mapped = (data ?? []).map((q: any) => ({
+      ...q,
+      tradie_profile: q.tradie?.tradie_profiles ?? null,
+    }));
+    setQuotes(mapped as Quote[]);
     setLoading(false);
   }
 
@@ -52,19 +60,19 @@ export function useMyQuotes() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const instanceId = useRef(Math.random().toString(36).slice(2, 7)).current;
 
   useEffect(() => {
     if (!userId) return;
     fetchQuotes();
 
-    // Remove any previous channel before creating a new one
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
     channelRef.current = supabase
-      .channel(`quotes:tradie:${userId}`)
+      .channel(`quotes:tradie:${userId}:${instanceId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'quotes', filter: `tradie_id=eq.${userId}` }, () => fetchQuotes())
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'quotes', filter: `tradie_id=eq.${userId}` }, () => fetchQuotes())
       .subscribe();

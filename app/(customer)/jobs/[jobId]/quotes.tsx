@@ -1,10 +1,10 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import React from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import React, { useCallback } from 'react';
+import { Pressable, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { QuoteCard } from '@/components/jobs/quote-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Colors } from '@/constants/theme';
+import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useJob } from '@/hooks/use-jobs';
 import { useJobQuotes } from '@/hooks/use-quotes';
@@ -14,7 +14,9 @@ export default function CustomerQuotesScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { job } = useJob(jobId);
-  const { quotes, loading } = useJobQuotes(jobId);
+  const { quotes, loading, refresh } = useJobQuotes(jobId);
+
+  useFocusEffect(useCallback(() => { refresh(); }, []));
 
   const hasAccepted = quotes.some((q) => q.status === 'accepted');
 
@@ -35,7 +37,10 @@ export default function CustomerQuotesScreen() {
       ) : quotes.length === 0 ? (
         <EmptyState icon="💬" title="No quotes yet" description="Tradies will be notified of your job. Check back soon." />
       ) : (
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={Brand.primary} />}
+        >
           <Text style={[styles.hint, { color: colors.textSecondary }]}>
             {hasAccepted ? 'A quote has been accepted.' : 'Tap a quote to accept it and proceed to payment.'}
           </Text>
