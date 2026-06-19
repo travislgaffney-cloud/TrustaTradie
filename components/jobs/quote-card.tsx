@@ -12,6 +12,7 @@ interface QuoteCardProps {
   quote: Quote;
   onAccept?: () => void;
   onViewProfile?: () => void;
+  onPress?: () => void;
   isAccepted?: boolean;
 }
 
@@ -22,11 +23,12 @@ const STATUS_VARIANT = {
   withdrawn: 'outline',
 } as const;
 
-export function QuoteCard({ quote, onAccept, onViewProfile, isAccepted }: QuoteCardProps) {
+export function QuoteCard({ quote, onAccept, onViewProfile, onPress, isAccepted }: QuoteCardProps) {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
 
   return (
+    <Pressable onPress={onPress} style={({ pressed }) => [{ opacity: pressed && onPress ? 0.85 : 1 }]}>
     <Card elevated style={styles.card}>
       <View style={styles.header}>
         <Pressable onPress={onViewProfile} style={styles.tradie}>
@@ -73,7 +75,14 @@ export function QuoteCard({ quote, onAccept, onViewProfile, isAccepted }: QuoteC
           <Text style={styles.acceptText}>Accept this quote →</Text>
         </Pressable>
       )}
+
+      {onPress && (
+        <Text style={[styles.detailsHint, { color: colors.textSecondary }]}>
+          Tap to view full details {quote.quote_document_url ? '· 📎 attachment' : ''}
+        </Text>
+      )}
     </Card>
+    </Pressable>
   );
 }
 
@@ -97,4 +106,5 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   acceptText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  detailsHint: { fontSize: 11, textAlign: 'right', marginTop: 2 },
 });

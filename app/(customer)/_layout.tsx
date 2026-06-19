@@ -83,6 +83,7 @@ export default function CustomerLayout() {
       <Tabs.Screen name="profile/settings" options={{ href: null }} />
       <Tabs.Screen name="jobs/[jobId]/index" options={{ href: null }} />
       <Tabs.Screen name="jobs/[jobId]/quotes" options={{ href: null }} />
+      <Tabs.Screen name="jobs/[jobId]/quote/[quoteId]" options={{ href: null }} />
       <Tabs.Screen name="jobs/[jobId]/accept-quote" options={{ href: null }} />
       <Tabs.Screen name="payments/index" options={{ href: null }} />
       <Tabs.Screen name="payments/checkout" options={{ href: null }} />

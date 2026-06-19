@@ -49,8 +49,9 @@ export default function CustomerQuotesScreen() {
               key={quote.id}
               quote={quote}
               isAccepted={hasAccepted}
-              onViewProfile={() => router.push(`/tradie/${quote.tradie_id}`)}
-              onAccept={() => router.push(`/(customer)/jobs/${jobId}/accept-quote?quoteId=${quote.id}`)}
+              onPress={() => router.push(`/(customer)/jobs/${jobId}/quote/${quote.id}` as never)}
+              onViewProfile={() => router.push(`/tradie/${quote.tradie_id}` as never)}
+              onAccept={() => router.push(`/(customer)/jobs/${jobId}/accept-quote?quoteId=${quote.id}` as never)}
             />
           ))}
         </ScrollView>
