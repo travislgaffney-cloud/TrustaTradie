@@ -40,11 +40,14 @@ export default function PublicTradieProfileScreen() {
   const { ratings } = useTradieRatings(tradieId);
 
   useEffect(() => {
+    if (!tradieId) { setLoading(false); return; }
     Promise.all([
       supabase.from('profiles').select('*').eq('id', tradieId).single<Profile>(),
       supabase.from('tradie_profiles').select('*').eq('id', tradieId).single<TradieProfile>(),
       supabase.from('tradie_documents').select('*').eq('tradie_id', tradieId).order('created_at', { ascending: false }),
-    ]).then(([{ data: p }, { data: tp }, { data: docs }]) => {
+    ]).then(([{ data: p, error: e1 }, { data: tp, error: e2 }, { data: docs }]) => {
+      if (e1) console.error('[TradieProfile] profiles:', e1.message);
+      if (e2) console.error('[TradieProfile] tradie_profiles:', e2.message);
       setProfile(p ?? null);
       setTradieProfile(tp ?? null);
       setDocuments((docs as TradieDocument[]) ?? []);
@@ -53,9 +56,29 @@ export default function PublicTradieProfileScreen() {
   }, [tradieId]);
 
   if (loading) return <LoadingSpinner full />;
-  if (!profile || !tradieProfile) return null;
 
-  const categories = tradieProfile.categories
+  if (!profile) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { backgroundColor: Brand.secondary }]}>
+          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+            <Text style={styles.backText}>← Back</Text>
+          </Pressable>
+        </View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+          <Text style={{ fontSize: 32, marginBottom: 12 }}>😕</Text>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text, textAlign: 'center' }}>
+            Profile not found
+          </Text>
+          <Text style={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+            This tradie's profile could not be loaded. Please go back and try again.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const categories = (tradieProfile?.categories ?? [])
     .map((c) => TRADE_CATEGORIES.find((t) => t.value === c))
     .filter(Boolean);
 
@@ -72,12 +95,14 @@ export default function PublicTradieProfileScreen() {
             <View style={styles.headerInfo}>
               <View style={styles.nameRow}>
                 <Text style={styles.name}>{profile.full_name}</Text>
-                {tradieProfile.is_verified && <Badge label="✓ Verified" variant="success" />}
+                {tradieProfile?.is_verified && <Badge label="✓ Verified" variant="success" />}
               </View>
-              <RatingStars rating={tradieProfile.average_rating} showNumber />
-              <Text style={styles.stats}>
-                {tradieProfile.total_reviews} reviews · {tradieProfile.completed_jobs} jobs completed
-              </Text>
+              {tradieProfile && <RatingStars rating={tradieProfile.average_rating} showNumber />}
+              {tradieProfile && (
+                <Text style={styles.stats}>
+                  {tradieProfile.total_reviews} reviews · {tradieProfile.completed_jobs} jobs completed
+                </Text>
+              )}
             </View>
           </View>
         </View>
@@ -98,7 +123,7 @@ export default function PublicTradieProfileScreen() {
           )}
 
           {/* Experience & rate */}
-          {(tradieProfile.years_experience || tradieProfile.hourly_rate) && (
+          {tradieProfile && (tradieProfile.years_experience || tradieProfile.hourly_rate) && (
             <Card style={styles.statsCard}>
               {tradieProfile.years_experience && (
                 <View style={styles.statRow}>
