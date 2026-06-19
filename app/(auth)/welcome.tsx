@@ -34,8 +34,6 @@ export default function WelcomeScreen() {
 
         {/* Auth actions */}
         <View style={styles.actions}>
-          <Text style={[styles.heading, { color: colors.text }]}>Get started</Text>
-
           <GoogleSignInButton />
 
           <View style={styles.divider}>
@@ -88,11 +86,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 32,
     gap: 12,
-  },
-  heading: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 4,
   },
   divider: {
     flexDirection: 'row',
