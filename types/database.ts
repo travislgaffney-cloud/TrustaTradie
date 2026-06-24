@@ -151,6 +151,14 @@ export interface Payment {
   tradie?: Profile;
 }
 
+export interface RatingImage {
+  id: string;
+  rating_id: string;
+  url: string;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface Rating {
   id: string;
   job_id: string;
@@ -161,6 +169,7 @@ export interface Rating {
   comment: string | null;
   created_at: string;
   customer?: Profile;
+  images?: RatingImage[];
 }
 
 export interface Conversation {

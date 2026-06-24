@@ -64,7 +64,7 @@ export function useTradieRatings(tradieId: string) {
     setLoading(true);
     const { data } = await supabase
       .from('ratings')
-      .select('*, customer:profiles!ratings_customer_id_fkey(id, full_name, avatar_url)')
+      .select('*, customer:profiles!ratings_customer_id_fkey(id, full_name, avatar_url), images:rating_images(*)')
       .eq('tradie_id', tradieId)
       .order('created_at', { ascending: false });
     setRatings((data as Rating[]) ?? []);

@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { PortfolioGrid } from '@/components/tradie/portfolio-grid';
 import { RatingStars } from '@/components/tradie/rating-stars';
+import { ReviewCard } from '@/components/tradie/review-card';
 import { TRADE_CATEGORIES } from '@/constants/trade-categories';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -85,7 +86,7 @@ export default function TradieProfileScreen() {
         <View style={[styles.header, { backgroundColor: Brand.secondary }]}>
           <View style={styles.headerBody}>
             <Pressable onPress={handleAvatarChange} disabled={uploading} style={styles.avatarWrap}>
-              <Avatar uri={profile.avatar_url} name={profile.full_name} size={80} />
+              <Avatar uri={profile.avatar_url} name={profile.full_name} size={80} verified={tradieProfile?.is_verified} />
               {uploading
                 ? <ActivityIndicator color="#fff" style={styles.photoLabel} />
                 : <Text style={styles.photoLabel}>Change photo</Text>
@@ -198,21 +199,8 @@ export default function TradieProfileScreen() {
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 Customer Reviews ({ratings.length})
               </Text>
-              {ratings.slice(0, 5).map((r) => (
-                <Card key={r.id} style={styles.reviewCard}>
-                  <View style={styles.reviewHeader}>
-                    <Avatar uri={r.customer?.avatar_url} name={r.customer?.full_name} size={32} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.reviewName, { color: colors.text }]}>
-                        {r.customer?.full_name ?? 'Customer'}
-                      </Text>
-                      <RatingStars rating={r.score} size={13} />
-                    </View>
-                  </View>
-                  {r.comment && (
-                    <Text style={[styles.reviewComment, { color: colors.textSecondary }]}>{r.comment}</Text>
-                  )}
-                </Card>
+              {ratings.map((r) => (
+                <ReviewCard key={r.id} rating={r} />
               ))}
             </>
           )}

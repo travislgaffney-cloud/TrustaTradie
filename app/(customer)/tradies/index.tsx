@@ -118,7 +118,7 @@ export default function TradiesNearMeScreen() {
               onPress={() => router.push(`/tradie/${tradie.id}`)}
             >
               <View style={styles.cardHeader}>
-                <Avatar uri={tradie.avatar_url} name={tradie.full_name} size={52} />
+                <Avatar uri={tradie.avatar_url} name={tradie.full_name} size={52} verified={tradie.is_verified} />
                 <View style={styles.cardInfo}>
                   <View style={styles.nameRow}>
                     <Text style={[styles.name, { color: colors.text }]}>{tradie.full_name}</Text>

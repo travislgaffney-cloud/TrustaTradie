@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import type { Profile, TradieProfile, TradieDocument } from '@/types/database';
 import { PortfolioGrid } from '@/components/tradie/portfolio-grid';
 import { RatingStars } from '@/components/tradie/rating-stars';
+import { ReviewCard } from '@/components/tradie/review-card';
 
 const DOC_ICONS: Record<string, string> = {
   licence:     '🪪',
@@ -91,7 +92,7 @@ export default function PublicTradieProfileScreen() {
             <Text style={styles.backText}>← Back</Text>
           </Pressable>
           <View style={styles.headerBody}>
-            <Avatar uri={profile.avatar_url} name={profile.full_name} size={80} />
+            <Avatar uri={profile.avatar_url} name={profile.full_name} size={80} verified={tradieProfile?.is_verified} />
             <View style={styles.headerInfo}>
               <View style={styles.nameRow}>
                 <Text style={styles.name}>{profile.full_name}</Text>
@@ -190,21 +191,8 @@ export default function PublicTradieProfileScreen() {
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
                 Customer Reviews ({ratings.length})
               </Text>
-              {ratings.slice(0, 5).map((r) => (
-                <Card key={r.id} style={styles.reviewCard}>
-                  <View style={styles.reviewHeader}>
-                    <Avatar uri={r.customer?.avatar_url} name={r.customer?.full_name} size={32} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.reviewName, { color: colors.text }]}>
-                        {r.customer?.full_name ?? 'Customer'}
-                      </Text>
-                      <RatingStars rating={r.score} size={13} />
-                    </View>
-                  </View>
-                  {r.comment && (
-                    <Text style={[styles.reviewComment, { color: colors.textSecondary }]}>{r.comment}</Text>
-                  )}
-                </Card>
+              {ratings.map((r) => (
+                <ReviewCard key={r.id} rating={r} />
               ))}
             </>
           )}

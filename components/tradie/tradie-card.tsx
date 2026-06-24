@@ -23,7 +23,7 @@ export function TradieCard({ profile, tradieProfile }: TradieCardProps) {
     <Pressable onPress={() => router.push(`/tradie/${profile.id}`)}>
       <Card elevated style={styles.card}>
         <View style={styles.header}>
-          <Avatar uri={profile.avatar_url} name={profile.full_name} size={52} />
+          <Avatar uri={profile.avatar_url} name={profile.full_name} size={52} verified={tradieProfile.is_verified} />
           <View style={styles.info}>
             <View style={styles.nameRow}>
               <Text style={[styles.name, { color: colors.text }]}>{profile.full_name}</Text>
