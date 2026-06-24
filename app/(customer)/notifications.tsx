@@ -29,6 +29,8 @@ function handleNotificationPress(n: Notification) {
       if (data?.job_id) router.push(`/(customer)/jobs/${data.job_id}/quotes` as never);
       break;
     case 'quote_accepted':
+    case 'quote_rejected':
+    case 'job_started':
     case 'job_completed':
       if (data?.job_id) router.push(`/(customer)/jobs/${data.job_id}` as never);
       break;
@@ -36,7 +38,11 @@ function handleNotificationPress(n: Notification) {
       if (data?.conversation_id) router.push(`/(customer)/messages/${data.conversation_id}` as never);
       break;
     case 'payment_released':
-      router.push('/(customer)/payments' as never);
+      if (data?.payment_id) {
+        router.push(`/(customer)/payments/${data.payment_id}` as never);
+      } else {
+        router.push('/(customer)/payments' as never);
+      }
       break;
     case 'rating_received':
       if (data?.job_id) router.push(`/rate/${data.job_id}` as never);

@@ -26,16 +26,26 @@ function handleNotificationPress(n: Notification) {
   const data = n.data as Record<string, string> | null;
   switch (n.type) {
     case 'quote_accepted':
-      if (data?.job_id) router.push(`/(tradie)/active-jobs/${data.job_id}` as never);
+      if (data?.job_id) router.push(`/(tradie)/my-quotes` as never);
+      break;
+    case 'new_quote_received':
+      if (data?.job_id) router.push(`/(tradie)/jobs/${data.job_id}` as never);
+      break;
+    case 'job_started':
+    case 'job_completed':
+      router.push('/(tradie)/my-quotes' as never);
       break;
     case 'payment_released':
       router.push('/(tradie)/earnings' as never);
       break;
     case 'new_job_nearby':
-      router.push('/(tradie)/home' as never);
+      router.push('/(tradie)/jobs' as never);
       break;
     case 'new_message':
       if (data?.conversation_id) router.push(`/(tradie)/messages/${data.conversation_id}` as never);
+      break;
+    case 'rating_received':
+      router.push('/(tradie)/profile' as never);
       break;
     default:
       break;

@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EscrowTimeline } from '@/components/payments/escrow-timeline';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useInvoice } from '@/hooks/use-invoices';
 import { supabase } from '@/lib/supabase';
+import { sendPushToUser } from '@/lib/notifications';
 import type { Payment } from '@/types/database';
 
 export default function PaymentDetailScreen() {
@@ -18,6 +19,7 @@ export default function PaymentDetailScreen() {
   const [payment, setPayment] = useState<Payment | null>(null);
   const [loading, setLoading] = useState(true);
   const [releasing, setReleasing] = useState(false);
+  const [disputing, setDisputing] = useState(false);
   const { invoice } = useInvoice(paymentId);
 
   useEffect(() => {
@@ -44,6 +46,67 @@ export default function PaymentDetailScreen() {
     await load();
     setReleasing(false);
     router.push(`/rate/${payment.job_id}`);
+  }
+
+  function handleDispute() {
+    if (!payment) return;
+    Alert.alert(
+      'Raise a Dispute',
+      'Are you unsatisfied with the work? This will freeze the payment and notify our admin team to investigate.\n\nPlease only dispute if there is a genuine issue.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Raise Dispute',
+          style: 'destructive',
+          onPress: async () => {
+            setDisputing(true);
+            try {
+              await supabase
+                .from('jobs')
+                .update({ status: 'disputed' })
+                .eq('id', payment.job_id);
+
+              // Notify admins
+              const { data: admins } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('role', 'admin');
+              const body = `A customer has raised a dispute for job "${(payment.job as any)?.title ?? 'a job'}" — R${payment.amount_total.toLocaleString()} held in escrow`;
+              for (const admin of admins ?? []) {
+                await supabase.from('notifications').insert({
+                  user_id: admin.id,
+                  type: 'job_completed',
+                  title: '⚖️ Dispute Raised',
+                  body,
+                  data: { job_id: payment.job_id },
+                  is_read: false,
+                });
+                sendPushToUser(admin.id, '⚖️ Dispute Raised', body);
+              }
+
+              // Notify tradie
+              const tradieBody = `The customer has raised a dispute for "${(payment.job as any)?.title ?? 'a job'}". Payment is on hold while our team investigates.`;
+              await supabase.from('notifications').insert({
+                user_id: payment.tradie_id,
+                type: 'job_completed',
+                title: 'Dispute Raised',
+                body: tradieBody,
+                data: { job_id: payment.job_id },
+                is_read: false,
+              });
+              sendPushToUser(payment.tradie_id, 'Dispute Raised', tradieBody);
+
+              await load();
+              Alert.alert('Dispute Raised', 'Our team has been notified and will investigate. The payment remains frozen until resolved.');
+            } catch {
+              Alert.alert('Error', 'Could not raise dispute. Please try again.');
+            } finally {
+              setDisputing(false);
+            }
+          },
+        },
+      ]
+    );
   }
 
   if (loading) return <LoadingSpinner full />;
@@ -96,7 +159,24 @@ export default function PaymentDetailScreen() {
             <Button size="lg" loading={releasing} onPress={handleRelease}>
               ✅ I'm Happy — Release Payment
             </Button>
+            <Pressable
+              style={[styles.disputeBtn, { borderColor: '#ef4444' }]}
+              onPress={handleDispute}
+              disabled={disputing}
+            >
+              <Text style={styles.disputeBtnText}>
+                {disputing ? 'Submitting...' : '⚖️ Raise a Dispute'}
+              </Text>
+            </Pressable>
           </>
+        )}
+
+        {(payment.job as any)?.status === 'disputed' && (
+          <View style={[styles.disputedNote, { backgroundColor: '#fef2f2', borderColor: '#fecaca' }]}>
+            <Text style={styles.disputedText}>
+              ⚖️ This job is under dispute. Payment is frozen while our team investigates. We'll be in touch.
+            </Text>
+          </View>
         )}
 
         {payment.status === 'released' && payment.released_at && (
@@ -174,4 +254,17 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   downloadBtnText: { fontSize: 14, fontWeight: '700' },
+  disputeBtn: {
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  disputeBtnText: { color: '#ef4444', fontSize: 15, fontWeight: '700' },
+  disputedNote: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+  },
+  disputedText: { fontSize: 13, color: '#991b1b', lineHeight: 18 },
 });

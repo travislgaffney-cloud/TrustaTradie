@@ -22,12 +22,22 @@ import { useNearbyTradies } from '@/hooks/use-nearby-tradies';
 import { useAuthStore } from '@/store/auth-store';
 import { RatingStars } from '@/components/tradie/rating-stars';
 
+type SortOption = 'distance' | 'rating' | 'reviews' | 'jobs';
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: 'distance', label: '📍 Nearest' },
+  { value: 'rating', label: '⭐ Top Rated' },
+  { value: 'reviews', label: '💬 Most Reviews' },
+  { value: 'jobs', label: '🔨 Most Jobs' },
+];
+
 export default function TradiesNearMeScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { profile, user } = useAuthStore();
   const { coords, loading: locationLoading } = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<TradeCategory | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('distance');
   const [startingChat, setStartingChat] = useState<string | null>(null);
 
   async function handleMessage(tradieId: string) {
@@ -44,7 +54,16 @@ export default function TradiesNearMeScreen() {
   const lat = coords?.latitude ?? -26.2041;
   const lng = coords?.longitude ?? 28.0473;
 
-  const { tradies, loading } = useNearbyTradies(lat, lng, 50, selectedCategory ?? undefined);
+  const { tradies: rawTradies, loading } = useNearbyTradies(lat, lng, 50, selectedCategory ?? undefined);
+
+  const tradies = [...rawTradies].sort((a, b) => {
+    switch (sortBy) {
+      case 'rating': return b.average_rating - a.average_rating;
+      case 'reviews': return b.total_reviews - a.total_reviews;
+      case 'jobs': return b.completed_jobs - a.completed_jobs;
+      default: return a.distance_km - b.distance_km;
+    }
+  });
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -96,6 +115,27 @@ export default function TradiesNearMeScreen() {
           </Pressable>
         ))}
       </ScrollView>
+
+      {/* Sort options */}
+      <View style={[styles.sortBar, { borderBottomColor: colors.border }]}>
+        {SORT_OPTIONS.map((opt) => (
+          <Pressable
+            key={opt.value}
+            onPress={() => setSortBy(opt.value)}
+            style={[
+              styles.sortChip,
+              sortBy === opt.value && { backgroundColor: Brand.secondary },
+            ]}
+          >
+            <Text style={[
+              styles.sortText,
+              { color: sortBy === opt.value ? '#fff' : colors.textSecondary },
+            ]}>
+              {opt.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
 
       {/* Tradie list */}
       <ScrollView
@@ -195,6 +235,19 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   filterText: { fontSize: 13, fontWeight: '500' },
+  sortBar: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6,
+    borderBottomWidth: 1,
+  },
+  sortChip: {
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  sortText: { fontSize: 12, fontWeight: '600' },
   scroll: { padding: 16, gap: 12, flexGrow: 1 },
   card: {
     borderRadius: 14,
