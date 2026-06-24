@@ -21,6 +21,7 @@ import { useMyTradieJobs, startJob, completeJob } from '@/hooks/use-jobs';
 import { startJobConversation } from '@/hooks/use-messages';
 import { useAuthStore } from '@/store/auth-store';
 import { ReviewRequestButton } from '@/components/jobs/review-request-button';
+import { InvoicePrompt } from '@/components/invoices/invoice-prompt';
 import type { Quote, Job } from '@/types/database';
 
 type Tab = 'quotes' | 'jobs';
@@ -62,6 +63,7 @@ export default function MyQuotesAndJobsScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('quotes');
   const [chattingId, setChattingId] = useState<string | null>(null);
   const [updatingJobId, setUpdatingJobId] = useState<string | null>(null);
+  const [invoiceJob, setInvoiceJob] = useState<Job | null>(null);
 
   const loading = activeTab === 'quotes' ? quotesLoading : jobsLoading;
 
@@ -273,8 +275,14 @@ export default function MyQuotesAndJobsScreen() {
         </View>
 
         {(job.status === 'completed' || job.status === 'pending_completion') && user && (
-          <View style={styles.acceptedActions}>
+          <View style={styles.completedActions}>
             <ReviewRequestButton jobId={job.id} tradieId={user.id} customerId={job.customer_id} />
+            <Pressable
+              style={[styles.invoiceBtn, { backgroundColor: '#dbeafe' }]}
+              onPress={() => setInvoiceJob(job)}
+            >
+              <Text style={[styles.invoiceBtnText, { color: '#1e40af' }]}>🧾 Send Invoice</Text>
+            </Pressable>
           </View>
         )}
       </View>
@@ -362,6 +370,16 @@ export default function MyQuotesAndJobsScreen() {
           }
         </ScrollView>
       )}
+      {invoiceJob && user && (
+        <InvoicePrompt
+          visible={!!invoiceJob}
+          onClose={() => setInvoiceJob(null)}
+          jobId={invoiceJob.id}
+          tradieId={user.id}
+          customerId={invoiceJob.customer_id}
+          jobTitle={invoiceJob.title}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -437,4 +455,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   outlineBtnText: { fontSize: 14, fontWeight: '600' },
+  completedActions: { gap: 8 },
+  invoiceBtn: {
+    flex: 1,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  invoiceBtnText: { fontSize: 14, fontWeight: '700' },
 });

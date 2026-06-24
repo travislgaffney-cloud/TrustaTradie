@@ -234,6 +234,21 @@ export interface PortfolioImage {
   created_at: string;
 }
 
+export interface Invoice {
+  id: string;
+  payment_id: string;
+  job_id: string;
+  tradie_id: string;
+  customer_id: string;
+  invoice_number: string;
+  type: 'generated' | 'uploaded';
+  amount: number;
+  vat_amount: number | null;
+  description: string | null;
+  uploaded_url: string | null;
+  created_at: string;
+}
+
 export interface Notification {
   id: string;
   user_id: string;

@@ -1,12 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EscrowTimeline } from '@/components/payments/escrow-timeline';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useInvoice } from '@/hooks/use-invoices';
 import { supabase } from '@/lib/supabase';
 import type { Payment } from '@/types/database';
 
@@ -17,6 +18,7 @@ export default function PaymentDetailScreen() {
   const [payment, setPayment] = useState<Payment | null>(null);
   const [loading, setLoading] = useState(true);
   const [releasing, setReleasing] = useState(false);
+  const { invoice } = useInvoice(paymentId);
 
   useEffect(() => {
     load();
@@ -104,6 +106,40 @@ export default function PaymentDetailScreen() {
             </Text>
           </View>
         )}
+
+        {invoice && (
+          <Card>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>🧾 Invoice</Text>
+            <View style={styles.row}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Invoice #</Text>
+              <Text style={[styles.value, { color: colors.text }]}>{invoice.invoice_number}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Amount</Text>
+              <Text style={[styles.value, { color: colors.text }]}>R{invoice.amount.toLocaleString()}</Text>
+            </View>
+            {invoice.vat_amount != null && invoice.vat_amount > 0 && (
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>VAT</Text>
+                <Text style={[styles.value, { color: colors.textSecondary }]}>R{invoice.vat_amount.toFixed(2)}</Text>
+              </View>
+            )}
+            <View style={styles.row}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Type</Text>
+              <Text style={[styles.value, { color: colors.text }]}>
+                {invoice.type === 'generated' ? 'Auto-generated' : 'Uploaded by tradie'}
+              </Text>
+            </View>
+            {invoice.uploaded_url && (
+              <Pressable
+                style={[styles.downloadBtn, { backgroundColor: '#dbeafe' }]}
+                onPress={() => Linking.openURL(invoice.uploaded_url!)}
+              >
+                <Text style={[styles.downloadBtnText, { color: '#1e40af' }]}>📥 View Invoice Document</Text>
+              </Pressable>
+            )}
+          </Card>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -131,4 +167,11 @@ const styles = StyleSheet.create({
   releaseNoteText: { fontSize: 13, color: '#92400e', lineHeight: 18 },
   releasedNote: { borderRadius: 12, padding: 14, alignItems: 'center' },
   releasedText: { fontSize: 14, color: '#166534', fontWeight: '600' },
+  downloadBtn: {
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  downloadBtnText: { fontSize: 14, fontWeight: '700' },
 });
