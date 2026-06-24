@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { supabase } from '@/lib/supabase';
 import { uploadFile } from '@/lib/storage';
+import { submitBugReport } from '@/lib/bug-report';
 import { useAuthStore } from '@/store/auth-store';
 
 export default function CustomerProfileScreen() {
@@ -73,6 +74,35 @@ export default function CustomerProfileScreen() {
           </Pressable>
         </Card>
 
+        <Pressable
+          style={[styles.bugBtn, { borderColor: colors.border }]}
+          onPress={() => {
+            Alert.alert(
+              'Report a Bug',
+              'Send a diagnostic report to help us improve the app?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Send Report',
+                  onPress: async () => {
+                    try {
+                      await submitBugReport({
+                        errorMessage: 'Manual bug report from customer profile',
+                        screen: '(customer)/profile',
+                      });
+                      Alert.alert('Thank you!', 'Your report has been sent.');
+                    } catch {
+                      Alert.alert('Error', 'Could not send report. Please try again.');
+                    }
+                  },
+                },
+              ]
+            );
+          }}
+        >
+          <Text style={[styles.bugBtnText, { color: colors.textSecondary }]}>🐛 Report a Bug</Text>
+        </Pressable>
+
         <Button variant="danger" onPress={handleSignOut}>Sign Out</Button>
       </ScrollView>
     </SafeAreaView>
@@ -92,4 +122,11 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
   menuText: { fontSize: 15 },
   menuArrow: { fontSize: 20 },
+  bugBtn: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  bugBtnText: { fontSize: 15, fontWeight: '600' },
 });

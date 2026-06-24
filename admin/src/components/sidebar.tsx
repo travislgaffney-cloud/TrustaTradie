@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/payouts", label: "Payouts", icon: "💰" },
   { href: "/users", label: "Users", icon: "👥" },
   { href: "/disputes", label: "Disputes", icon: "⚖️" },
+  { href: "/bug-reports", label: "Bug Reports", icon: "🐛" },
 ];
 
 export function Sidebar() {

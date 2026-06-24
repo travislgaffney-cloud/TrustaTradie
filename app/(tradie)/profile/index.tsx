@@ -16,6 +16,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTradieDocuments, usePortfolioImages, useTradieRatings } from '@/hooks/use-tradie-profile';
 import { supabase } from '@/lib/supabase';
 import { uploadFile } from '@/lib/storage';
+import { submitBugReport } from '@/lib/bug-report';
 import { useAuthStore } from '@/store/auth-store';
 import type { TradieDocument } from '@/types/database';
 
@@ -232,6 +233,35 @@ export default function TradieProfileScreen() {
             <Text style={styles.editBtnText}>✏️  Edit Profile</Text>
           </Pressable>
 
+          <Pressable
+            style={[styles.bugBtn, { borderColor: colors.border }]}
+            onPress={() => {
+              Alert.alert(
+                'Report a Bug',
+                'Send a diagnostic report to help us improve the app?',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Send Report',
+                    onPress: async () => {
+                      try {
+                        await submitBugReport({
+                          errorMessage: 'Manual bug report from tradie profile',
+                          screen: '(tradie)/profile',
+                        });
+                        Alert.alert('Thank you!', 'Your report has been sent.');
+                      } catch {
+                        Alert.alert('Error', 'Could not send report. Please try again.');
+                      }
+                    },
+                  },
+                ]
+              );
+            }}
+          >
+            <Text style={[styles.bugBtnText, { color: colors.textSecondary }]}>🐛 Report a Bug</Text>
+          </Pressable>
+
           <Pressable style={[styles.signOutBtn, { borderColor: '#ef4444' }]} onPress={handleSignOut}>
             <Text style={styles.signOutText}>Sign Out</Text>
           </Pressable>
@@ -291,5 +321,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
   },
+  bugBtn: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  bugBtnText: { fontSize: 15, fontWeight: '600' },
   signOutText: { color: '#ef4444', fontSize: 15, fontWeight: '700' },
 });

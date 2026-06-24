@@ -8,6 +8,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuth } from '@/hooks/use-auth';
 import { useAuthStore } from '@/store/auth-store';
 import { AppLoadingScreen } from '@/components/ui/app-loading-screen';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -20,20 +21,22 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          {!session || !profile?.onboarding_complete ? (
-            <Stack.Screen name="(auth)" />
-          ) : profile.role === 'tradie' ? (
-            <Stack.Screen name="(tradie)" />
-          ) : (
-            <Stack.Screen name="(customer)" />
-          )}
-          <Stack.Screen name="tradie/[tradieId]" options={{ headerShown: false }} />
-          <Stack.Screen name="rate/[jobId]" options={{ headerShown: true, title: 'Rate This Job', presentation: 'modal' }} />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
+      <ErrorBoundary>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack screenOptions={{ headerShown: false }}>
+            {!session || !profile?.onboarding_complete ? (
+              <Stack.Screen name="(auth)" />
+            ) : profile.role === 'tradie' ? (
+              <Stack.Screen name="(tradie)" />
+            ) : (
+              <Stack.Screen name="(customer)" />
+            )}
+            <Stack.Screen name="tradie/[tradieId]" options={{ headerShown: false }} />
+            <Stack.Screen name="rate/[jobId]" options={{ headerShown: true, title: 'Rate This Job', presentation: 'modal' }} />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

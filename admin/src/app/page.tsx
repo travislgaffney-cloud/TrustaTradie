@@ -17,6 +17,7 @@ async function getStats() {
     { count: pendingPayouts },
     { count: disputedJobs },
     { data: payments },
+    { count: unresolvedBugs },
   ] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "customer"),
@@ -30,6 +31,7 @@ async function getStats() {
     supabase.from("pending_payouts").select("*", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("jobs").select("*", { count: "exact", head: true }).eq("status", "disputed"),
     supabase.from("payments").select("amount_total, platform_fee, status"),
+    supabase.from("bug_reports").select("*", { count: "exact", head: true }).eq("resolved", false),
   ]);
 
   const paymentList = payments ?? [];
@@ -58,6 +60,7 @@ async function getStats() {
     totalRevenue,
     platformFees,
     escrowHeld,
+    unresolvedBugs: unresolvedBugs ?? 0,
   };
 }
 
@@ -84,6 +87,11 @@ export default async function DashboardPage() {
         {stats.disputedJobs > 0 && (
           <a href="/disputes" className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-sm text-red-800 font-medium hover:bg-red-100 transition">
             ⚖️ {stats.disputedJobs} active dispute{stats.disputedJobs !== 1 ? "s" : ""}
+          </a>
+        )}
+        {stats.unresolvedBugs > 0 && (
+          <a href="/bug-reports" className="bg-purple-50 border border-purple-200 rounded-lg px-4 py-2 text-sm text-purple-800 font-medium hover:bg-purple-100 transition">
+            🐛 {stats.unresolvedBugs} unresolved bug report{stats.unresolvedBugs !== 1 ? "s" : ""}
           </a>
         )}
       </div>
@@ -119,6 +127,7 @@ export default async function DashboardPage() {
         <StatCard icon="📝" label="Total Quotes" value={stats.totalQuotes} color="text-gray-900" />
         <StatCard icon="📄" label="Pending Documents" value={stats.pendingDocs} color="text-amber-600" />
         <StatCard icon="⚖️" label="Active Disputes" value={stats.disputedJobs} color="text-red-600" />
+        <StatCard icon="🐛" label="Bug Reports" value={stats.unresolvedBugs} color="text-purple-600" />
       </div>
     </div>
   );
