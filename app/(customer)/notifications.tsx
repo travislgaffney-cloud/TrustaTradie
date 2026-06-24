@@ -38,6 +38,9 @@ function handleNotificationPress(n: Notification) {
     case 'payment_released':
       router.push('/(customer)/payments' as never);
       break;
+    case 'rating_received':
+      if (data?.job_id) router.push(`/rate/${data.job_id}` as never);
+      break;
     default:
       break;
   }

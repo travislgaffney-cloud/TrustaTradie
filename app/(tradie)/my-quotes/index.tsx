@@ -20,6 +20,7 @@ import { useMyQuotes } from '@/hooks/use-quotes';
 import { useMyTradieJobs, startJob, completeJob } from '@/hooks/use-jobs';
 import { startJobConversation } from '@/hooks/use-messages';
 import { useAuthStore } from '@/store/auth-store';
+import { ReviewRequestButton } from '@/components/jobs/review-request-button';
 import type { Quote, Job } from '@/types/database';
 
 type Tab = 'quotes' | 'jobs';
@@ -270,6 +271,12 @@ export default function MyQuotesAndJobsScreen() {
             </Pressable>
           )}
         </View>
+
+        {(job.status === 'completed' || job.status === 'pending_completion') && user && (
+          <View style={styles.acceptedActions}>
+            <ReviewRequestButton jobId={job.id} tradieId={user.id} customerId={job.customer_id} />
+          </View>
+        )}
       </View>
     );
   }

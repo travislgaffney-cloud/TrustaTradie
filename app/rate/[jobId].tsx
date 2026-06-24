@@ -16,7 +16,22 @@ export default function RateJobScreen() {
   const [score, setScore] = useState(0);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [done, setDone] = useState(false);
+
+  React.useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('ratings')
+      .select('id')
+      .eq('job_id', jobId)
+      .eq('customer_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setDone(true);
+        setChecking(false);
+      });
+  }, [jobId, user]);
 
   async function handleSubmit() {
     if (!user || score === 0) return;
@@ -48,6 +63,8 @@ export default function RateJobScreen() {
     setLoading(false);
     setDone(true);
   }
+
+  if (checking) return null;
 
   if (done) {
     return (
