@@ -27,6 +27,7 @@ export type NotificationType =
   | 'new_quote_received'
   | 'quote_accepted'
   | 'quote_rejected'
+  | 'job_started'
   | 'job_completed'
   | 'payment_released'
   | 'new_message'
@@ -45,6 +46,8 @@ export interface Profile {
   bio: string | null;
   location: unknown | null; // PostGIS geography
   address_text: string | null;
+  suburb: string | null;
+  province: string | null;
   push_token: string | null;
   bank_name: string | null;
   bank_account_number: string | null;
@@ -85,6 +88,7 @@ export interface Job {
   budget_max: number | null;
   preferred_start: string | null;
   accepted_quote_id: string | null;
+  scheduled_at: string | null;
   view_count: number;
   created_at: string;
   updated_at: string;
@@ -185,6 +189,21 @@ export interface Message {
   created_at: string;
   sender?: Profile;
 }
+
+export interface BookingProposal {
+  id: string;
+  conversation_id: string;
+  job_id: string;
+  proposed_by: string;
+  proposed_datetime: string;
+  status: 'pending' | 'accepted' | 'declined';
+  created_at: string;
+  proposer?: Profile;
+}
+
+// Local-only extension — _pending is never stored in the DB.
+// used by useMessages to track optimistic inserts before DB confirmation.
+export type LocalMessage = Message & { _pending?: boolean };
 
 export interface TradieDocument {
   id: string;

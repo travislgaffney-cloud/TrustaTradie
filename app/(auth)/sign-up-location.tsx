@@ -71,6 +71,8 @@ export default function SignUpLocationScreen() {
 
     const updateData: Record<string, unknown> = {
       address_text: address,
+      suburb: suburb || null,
+      province: province || null,
       onboarding_complete: true,
     };
 

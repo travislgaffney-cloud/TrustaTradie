@@ -18,7 +18,12 @@ export default function CustomerProfileScreen() {
   const [uploading, setUploading] = useState(false);
 
   async function handleAvatarChange() {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
     if (result.canceled || !profile) return;
     setUploading(true);
     const asset = result.assets[0];

@@ -1,7 +1,6 @@
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import React from 'react';
 import {
-  FlatList,
   Pressable,
   RefreshControl,
   SafeAreaView,
@@ -12,7 +11,6 @@ import {
 } from 'react-native';
 import { JobCard } from '@/components/jobs/job-card';
 import { Avatar } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Brand, Colors } from '@/constants/theme';
@@ -47,6 +45,20 @@ export default function CustomerHomeScreen() {
             </View>
             <Pressable onPress={() => router.push('/(customer)/profile')}>
               <Avatar uri={profile?.avatar_url} name={profile?.full_name} size={36} color="#38BDF8" />
+            </Pressable>
+          </View>
+          <View style={styles.headerBtns}>
+            <Pressable
+              style={styles.postJobBtn}
+              onPress={() => router.push('/(customer)/post-job/details')}
+            >
+              <Text style={styles.postJobText}>+ Post a Job</Text>
+            </Pressable>
+            <Pressable
+              style={styles.calBtn}
+              onPress={() => router.push('/(customer)/calendar')}
+            >
+              <Text style={styles.calBtnText}>📅 Calendar</Text>
             </Pressable>
           </View>
         </View>
@@ -88,26 +100,18 @@ export default function CustomerHomeScreen() {
         </View>
       </ScrollView>
 
-      {/* Create job button */}
-      <View style={styles.createJobWrap} pointerEvents="box-none">
-        <Link href="/(customer)/post-job/details" asChild>
-          <Pressable style={[styles.createJobBtn, { backgroundColor: Brand.primary }]}>
-            <Text style={styles.createJobText}>Create Job</Text>
-          </Pressable>
-        </Link>
-      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  scroll: { flexGrow: 1, gap: 0, paddingBottom: 100 },
+  scroll: { flexGrow: 1, gap: 0, paddingBottom: 32 },
   header: {
     paddingTop: 20,
-    paddingBottom: 24,
+    paddingBottom: 20,
     paddingHorizontal: 20,
-    gap: 4,
+    gap: 14,
   },
   headerTop: {
     flexDirection: 'row',
@@ -128,24 +132,26 @@ const styles = StyleSheet.create({
   },
   statNum: { fontSize: 24, fontWeight: '800' },
   statLabel: { fontSize: 11, marginTop: 2, textAlign: 'center' },
-  createJobWrap: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 24,
+  headerBtns: { flexDirection: 'row', gap: 10 },
+  postJobBtn: {
+    flex: 1,
+    backgroundColor: Brand.primary,
+    borderRadius: 12,
+    paddingVertical: 13,
     alignItems: 'center',
   },
-  createJobBtn: {
-    paddingHorizontal: 36,
-    paddingVertical: 14,
-    borderRadius: 28,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+  postJobText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  calBtn: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
-  createJobText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  calBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   section: { padding: 16, gap: 12 },
   sectionTitle: { fontSize: 18, fontWeight: '700' },
 });

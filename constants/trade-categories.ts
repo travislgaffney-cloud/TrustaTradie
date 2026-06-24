@@ -6,7 +6,8 @@ export type TradeCategory =
   | 'roofing'
   | 'tiling'
   | 'flooring'
-  | 'carpentry';
+  | 'carpentry'
+  | 'solar';
 
 export const TRADE_CATEGORIES: {
   value: TradeCategory;
@@ -61,6 +62,12 @@ export const TRADE_CATEGORIES: {
     label: 'Carpentry',
     icon: '🪚',
     description: 'Cupboards, built-ins, furniture, woodwork',
+  },
+  {
+    value: 'solar',
+    label: 'Solar',
+    icon: '☀️',
+    description: 'Solar panels, inverters, batteries, installation',
   },
 ];
 

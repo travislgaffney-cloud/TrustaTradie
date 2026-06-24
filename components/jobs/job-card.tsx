@@ -17,9 +17,10 @@ interface JobCardProps {
   onPress?: () => void;
   onDelete?: () => void;
   mode?: 'customer' | 'tradie';
+  hasQuoted?: boolean;
 }
 
-export function JobCard({ job, showDistance, distanceKm, onPress, onDelete, mode = 'customer' }: JobCardProps) {
+export function JobCard({ job, showDistance, distanceKm, onPress, onDelete, mode = 'customer', hasQuoted }: JobCardProps) {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
 
@@ -59,6 +60,11 @@ export function JobCard({ job, showDistance, distanceKm, onPress, onDelete, mode
           >
             <Ionicons name="trash-outline" size={18} color={colors.textSecondary} />
           </Pressable>
+        )}
+        {hasQuoted && (
+          <View style={styles.quotedBanner}>
+            <Text style={styles.quotedBannerText}>✅ Quote submitted</Text>
+          </View>
         )}
         <View style={styles.content}>
           <View style={styles.row}>
@@ -106,6 +112,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 1,
   },
+  quotedBanner: {
+    backgroundColor: '#dcfce7',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderBottomWidth: 1,
+    borderBottomColor: '#bbf7d0',
+  },
+  quotedBannerText: { fontSize: 13, fontWeight: '600', color: '#15803d' },
   content: { padding: 14, gap: 8 },
   row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   title: { fontSize: 16, fontWeight: '700' },

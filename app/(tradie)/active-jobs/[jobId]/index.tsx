@@ -8,6 +8,8 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useJob } from '@/hooks/use-jobs';
+import { startJobConversation } from '@/hooks/use-messages';
+import { useAuthStore } from '@/store/auth-store';
 import { supabase } from '@/lib/supabase';
 
 export default function TradieActiveJobScreen() {
@@ -15,7 +17,20 @@ export default function TradieActiveJobScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { job, loading, refresh } = useJob(jobId);
+  const { user } = useAuthStore();
   const [requesting, setRequesting] = useState(false);
+  const [openingChat, setOpeningChat] = useState(false);
+
+  async function handleMessageCustomer() {
+    if (!job || !user) return;
+    setOpeningChat(true);
+    try {
+      const conversationId = await startJobConversation(job.customer_id, user.id, jobId);
+      router.push(`/(tradie)/messages/${conversationId}`);
+    } finally {
+      setOpeningChat(false);
+    }
+  }
 
   async function handleRequestCompletion() {
     setRequesting(true);
@@ -49,7 +64,7 @@ export default function TradieActiveJobScreen() {
           <Text style={[styles.infoRow, { color: colors.textSecondary }]}>📍 {job.address_text}</Text>
         </Card>
 
-        <Button variant="secondary" onPress={() => router.push(`/(tradie)/messages`)}>
+        <Button variant="secondary" loading={openingChat} onPress={handleMessageCustomer}>
           💬 Message Customer
         </Button>
 

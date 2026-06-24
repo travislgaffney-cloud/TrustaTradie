@@ -2,7 +2,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  Image, Pressable, SafeAreaView, ScrollView,
+  ActivityIndicator, Alert, Image, Pressable, SafeAreaView, ScrollView,
   StyleSheet, Text, View,
 } from 'react-native';
 import { Avatar } from '@/components/ui/avatar';
@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { acceptQuote } from '@/hooks/use-quotes';
 import { supabase } from '@/lib/supabase';
 import type { Quote } from '@/types/database';
 
@@ -23,6 +24,7 @@ export default function QuoteDetailScreen() {
   const colors = Colors[scheme];
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accepting, setAccepting] = useState(false);
 
   useEffect(() => {
     supabase
@@ -38,6 +40,31 @@ export default function QuoteDetailScreen() {
         setLoading(false);
       });
   }, [quoteId]);
+
+  function handleAccept() {
+    Alert.alert(
+      'Accept Quote',
+      `Accept this quote for R${Number(quote!.amount).toLocaleString()}? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Accept', style: 'default', onPress: async () => {
+            setAccepting(true);
+            try {
+              await acceptQuote(quoteId, jobId);
+              setQuote((q) => q ? { ...q, status: 'accepted' } : q);
+              Alert.alert('Quote Accepted!', 'The tradie has been notified and will be in touch soon.');
+            } catch (e: any) {
+              console.error('[acceptQuote] error:', e?.message, e);
+              Alert.alert('Error', 'Could not accept the quote. Please try again.');
+            } finally {
+              setAccepting(false);
+            }
+          },
+        },
+      ]
+    );
+  }
 
   if (loading) return <LoadingSpinner full />;
   if (!quote) return null;
@@ -167,11 +194,21 @@ export default function QuoteDetailScreen() {
         {/* Accept CTA */}
         {quote.status === 'pending' && (
           <Pressable
-            style={styles.acceptBtn}
-            onPress={() => router.push(`/(customer)/jobs/${jobId}/accept-quote?quoteId=${quoteId}` as never)}
+            style={[styles.acceptBtn, accepting && { opacity: 0.6 }]}
+            onPress={handleAccept}
+            disabled={accepting}
           >
-            <Text style={styles.acceptText}>Accept this quote →</Text>
+            {accepting
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.acceptText}>Accept this quote →</Text>
+            }
           </Pressable>
+        )}
+
+        {quote.status === 'accepted' && (
+          <View style={[styles.acceptedBanner]}>
+            <Text style={styles.acceptedBannerText}>✅ You accepted this quote</Text>
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -218,4 +255,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16, alignItems: 'center',
   },
   acceptText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  acceptedBanner: {
+    backgroundColor: '#dcfce7', borderRadius: 12,
+    paddingVertical: 16, alignItems: 'center',
+    borderWidth: 1, borderColor: '#bbf7d0',
+  },
+  acceptedBannerText: { color: '#166534', fontSize: 15, fontWeight: '700' },
 });

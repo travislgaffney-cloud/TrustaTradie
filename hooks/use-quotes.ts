@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { sendPushToUser } from '@/lib/notifications';
 import type { Quote } from '@/types/database';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -150,14 +151,16 @@ export async function submitQuote(params: {
       supabase.from('profiles').select('full_name').eq('id', params.tradieId).single(),
     ]);
 
+    const quoteNotifBody = `${tradieProfile?.full_name ?? 'A tradie'} submitted a quote for "${jobDetail?.title ?? 'your job'}" — R${params.amount.toLocaleString()}`;
     await supabase.from('notifications').insert({
       user_id: job.customer_id,
       type: 'new_quote_received',
       title: 'New Quote Received',
-      body: `${tradieProfile?.full_name ?? 'A tradie'} submitted a quote for "${jobDetail?.title ?? 'your job'}" — R${params.amount.toLocaleString()}`,
+      body: quoteNotifBody,
       data: { job_id: params.jobId, quote_id: data.id },
       is_read: false,
     });
+    sendPushToUser(job.customer_id, 'New Quote Received', quoteNotifBody, { job_id: params.jobId, quote_id: data.id });
   }
 
   return data;
@@ -189,13 +192,15 @@ export async function acceptQuote(quoteId: string, jobId: string): Promise<void>
   ]);
 
   if (quote && job) {
+    const acceptBody = `Your quote for "${job.title}" was accepted. Get ready to start the job!`;
     await supabase.from('notifications').insert({
       user_id: quote.tradie_id,
       type: 'quote_accepted',
       title: 'Quote Accepted!',
-      body: `Your quote for "${job.title}" was accepted. Get ready to start the job!`,
+      body: acceptBody,
       data: { job_id: jobId, quote_id: quoteId },
       is_read: false,
     });
+    sendPushToUser(quote.tradie_id, 'Quote Accepted!', acceptBody, { job_id: jobId, quote_id: quoteId });
   }
 }

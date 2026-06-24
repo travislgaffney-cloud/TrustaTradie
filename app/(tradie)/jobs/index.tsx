@@ -15,7 +15,7 @@ export default function TradieJobsScreen() {
   const { tradieProfile } = useAuthStore();
   const { coords, loading: locLoading } = useLocation();
   const radius = tradieProfile?.service_radius_km ?? 50;
-  const { jobs, loading, refresh } = useNearbyJobs(
+  const { jobs, quotedJobIds, loading, refresh } = useNearbyJobs(
     coords?.latitude ?? -26.2041,
     coords?.longitude ?? 28.0473,
     radius
@@ -38,7 +38,9 @@ export default function TradieJobsScreen() {
         ) : jobs.length === 0 ? (
           <EmptyState icon="🔍" title="No jobs nearby" description="There are no open jobs in your service area right now. Check back soon." />
         ) : (
-          jobs.map((job) => <JobCard key={job.id} job={job} mode="tradie" />)
+          jobs.map((job) => (
+            <JobCard key={job.id} job={job} mode="tradie" hasQuoted={quotedJobIds.has(job.id)} />
+          ))
         )}
       </ScrollView>
     </SafeAreaView>

@@ -12,9 +12,6 @@ interface ChannelEntry {
 
 const channelRegistry = new Map<string, ChannelEntry>();
 
-// Multiple components call useNotifications() for the same user (tab bar badge +
-// alerts screen). Realtime channels with the same topic can't have postgres_changes
-// callbacks added after subscribe(), so share a single channel/subscription per user.
 function subscribeToNotifications(userId: string, listener: NotificationListener) {
   let entry = channelRegistry.get(userId);
   if (!entry) {
@@ -44,6 +41,14 @@ function subscribeToNotifications(userId: string, listener: NotificationListener
   };
 }
 
+// Module-level event bus so all hook instances stay in sync when read state changes
+type ReadEvent = { type: 'mark_all' } | { type: 'mark_one'; id: string } | { type: 'delete'; id: string; wasUnread: boolean };
+const readListeners = new Set<(event: ReadEvent) => void>();
+
+function dispatchReadEvent(event: ReadEvent) {
+  readListeners.forEach((l) => l(event));
+}
+
 export function useNotifications() {
   const { user } = useAuthStore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -58,6 +63,26 @@ export function useNotifications() {
       setUnreadCount((c) => c + 1);
     });
   }, [user]);
+
+  // Sync read state changes from any hook instance (e.g. tab bar badge vs screen)
+  useEffect(() => {
+    const handler = (event: ReadEvent) => {
+      if (event.type === 'mark_all') {
+        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+        setUnreadCount(0);
+      } else if (event.type === 'mark_one') {
+        setNotifications((prev) =>
+          prev.map((n) => n.id === event.id ? { ...n, is_read: true } : n)
+        );
+        setUnreadCount((c) => Math.max(0, c - 1));
+      } else if (event.type === 'delete') {
+        setNotifications((prev) => prev.filter((n) => n.id !== event.id));
+        if (event.wasUnread) setUnreadCount((c) => Math.max(0, c - 1));
+      }
+    };
+    readListeners.add(handler);
+    return () => { readListeners.delete(handler); };
+  }, []);
 
   async function fetch() {
     setLoading(true);
@@ -75,22 +100,25 @@ export function useNotifications() {
 
   async function markAllRead() {
     if (!user) return;
+    dispatchReadEvent({ type: 'mark_all' });
     await supabase
       .from('notifications')
       .update({ is_read: true })
       .eq('user_id', user.id)
       .eq('is_read', false);
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-    setUnreadCount(0);
+  }
+
+  function markOneRead(id: string) {
+    dispatchReadEvent({ type: 'mark_one', id });
+    supabase.from('notifications').update({ is_read: true }).eq('id', id);
   }
 
   async function deleteNotification(id: string) {
     const target = notifications.find((n) => n.id === id);
     const { error } = await supabase.from('notifications').delete().eq('id', id);
     if (error) { console.error('[deleteNotification] error:', error.message); return; }
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-    if (target && !target.is_read) setUnreadCount((c) => Math.max(0, c - 1));
+    dispatchReadEvent({ type: 'delete', id, wasUnread: target ? !target.is_read : false });
   }
 
-  return { notifications, unreadCount, loading, markAllRead, deleteNotification, refresh: fetch };
+  return { notifications, unreadCount, loading, markAllRead, markOneRead, deleteNotification, refresh: fetch };
 }

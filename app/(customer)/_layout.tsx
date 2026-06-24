@@ -24,6 +24,7 @@ export default function CustomerLayout() {
 
   return (
     <Tabs
+      backBehavior="history"
       screenOptions={{
         tabBarActiveTintColor: Brand.primary,
         tabBarInactiveTintColor: colors.tabIconDefault,
@@ -41,7 +42,7 @@ export default function CustomerLayout() {
         }}
       />
       <Tabs.Screen
-        name="jobs/index"
+        name="jobs"
         options={{
           title: 'My Jobs',
           tabBarIcon: ({ focused, color }) => (
@@ -50,7 +51,7 @@ export default function CustomerLayout() {
         }}
       />
       <Tabs.Screen
-        name="messages/index"
+        name="messages"
         options={{
           title: 'Chats',
           tabBarIcon: ({ focused, color }) => (
@@ -59,7 +60,7 @@ export default function CustomerLayout() {
         }}
       />
       <Tabs.Screen
-        name="tradies/index"
+        name="tradies"
         options={{
           title: 'Tradies',
           tabBarIcon: ({ focused, color }) => (
@@ -77,21 +78,11 @@ export default function CustomerLayout() {
           ),
         }}
       />
-      {/* Hidden routes — not shown in tab bar */}
-      <Tabs.Screen name="messages/[conversationId]" options={{ href: null }} />
-      <Tabs.Screen name="profile/index" options={{ href: null }} />
-      <Tabs.Screen name="profile/settings" options={{ href: null }} />
-      <Tabs.Screen name="jobs/[jobId]/index" options={{ href: null }} />
-      <Tabs.Screen name="jobs/[jobId]/quotes" options={{ href: null }} />
-      <Tabs.Screen name="jobs/[jobId]/quote/[quoteId]" options={{ href: null }} />
-      <Tabs.Screen name="jobs/[jobId]/accept-quote" options={{ href: null }} />
-      <Tabs.Screen name="payments/index" options={{ href: null }} />
-      <Tabs.Screen name="payments/checkout" options={{ href: null }} />
-      <Tabs.Screen name="payments/[paymentId]" options={{ href: null }} />
-      <Tabs.Screen name="post-job/details" options={{ href: null }} />
-      <Tabs.Screen name="post-job/ai-image" options={{ href: null }} />
-      <Tabs.Screen name="post-job/location" options={{ href: null }} />
-      <Tabs.Screen name="post-job/review" options={{ href: null }} />
+      {/* Hidden sections — detail screens live inside each folder's Stack layout */}
+      <Tabs.Screen name="profile" options={{ href: null }} />
+      <Tabs.Screen name="payments" options={{ href: null }} />
+      <Tabs.Screen name="post-job" options={{ href: null }} />
+      <Tabs.Screen name="calendar" options={{ href: null }} />
     </Tabs>
   );
 }

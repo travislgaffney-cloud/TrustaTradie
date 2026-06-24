@@ -24,6 +24,7 @@ export default function TradieLayout() {
 
   return (
     <Tabs
+      backBehavior="history"
       screenOptions={{
         tabBarActiveTintColor: Brand.primary,
         tabBarInactiveTintColor: colors.tabIconDefault,
@@ -31,25 +32,21 @@ export default function TradieLayout() {
         headerShown: false,
       }}
     >
-      <Tabs.Screen name="home" options={{ title: 'Nearby Jobs', tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'map' : 'map-outline'} focused={focused} color={color} /> }} />
-      <Tabs.Screen name="jobs/index" options={{ title: 'Browse', tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'search' : 'search-outline'} focused={focused} color={color} /> }} />
-      <Tabs.Screen name="my-quotes/index" options={{ title: 'My Quotes', tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'document-text' : 'document-text-outline'} focused={focused} color={color} /> }} />
+      <Tabs.Screen name="home" options={{ title: 'Home', tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} color={color} /> }} />
+      <Tabs.Screen name="my-quotes" options={{ title: 'My Jobs', tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'briefcase' : 'briefcase-outline'} focused={focused} color={color} /> }} />
       <Tabs.Screen name="notifications" options={{
         title: 'Alerts',
         tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
         tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'notifications' : 'notifications-outline'} focused={focused} color={color} />,
       }} />
-      <Tabs.Screen name="profile/index" options={{ title: 'Profile', tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} color={color} /> }} />
-      <Tabs.Screen name="messages/index" options={{ href: null }} />
-      <Tabs.Screen name="messages/[conversationId]" options={{ href: null }} />
-      <Tabs.Screen name="jobs/[jobId]/index" options={{ href: null }} />
-      <Tabs.Screen name="jobs/[jobId]/submit-quote" options={{ href: null }} />
-      <Tabs.Screen name="active-jobs/[jobId]/index" options={{ href: null }} />
-      <Tabs.Screen name="profile/edit" options={{ href: null }} />
-      <Tabs.Screen name="profile/documents" options={{ href: null }} />
-      <Tabs.Screen name="profile/portfolio" options={{ href: null }} />
-      <Tabs.Screen name="earnings/index" options={{ href: null }} />
-      <Tabs.Screen name="earnings/bank-details" options={{ href: null }} />
+      <Tabs.Screen name="messages" options={{ title: 'Messages', tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'chatbubbles' : 'chatbubbles-outline'} focused={focused} color={color} /> }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} color={color} /> }} />
+      {/* Hidden sections — detail screens live inside each folder's Stack layout */}
+      <Tabs.Screen name="jobs" options={{ href: null }} />
+      <Tabs.Screen name="active-jobs" options={{ href: null }} />
+      <Tabs.Screen name="earnings" options={{ href: null }} />
+      <Tabs.Screen name="calendar" options={{ href: null }} />
+      <Tabs.Screen name="business-tools" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -46,10 +46,12 @@ function handleNotificationPress(n: Notification) {
 function NotificationRow({
   item,
   onDelete,
+  onRead,
   colors,
 }: {
   item: Notification;
   onDelete: () => void;
+  onRead: () => void;
   colors: any;
 }) {
   const swipeableRef = useRef<SwipeableMethods>(null);
@@ -75,7 +77,7 @@ function NotificationRow({
       renderRightActions={renderRightActions}
     >
       <Pressable
-        onPress={() => handleNotificationPress(item)}
+        onPress={() => { onRead(); handleNotificationPress(item); }}
         style={[
           styles.item,
           { borderBottomColor: colors.border, backgroundColor: item.is_read ? colors.background : colors.surface },
@@ -98,7 +100,7 @@ function NotificationRow({
 export default function CustomerNotificationsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
-  const { notifications, loading, markAllRead, deleteNotification, refresh } = useNotifications();
+  const { notifications, loading, markAllRead, markOneRead, deleteNotification, refresh } = useNotifications();
 
   useEffect(() => {
     markAllRead();
@@ -124,6 +126,7 @@ export default function CustomerNotificationsScreen() {
             <NotificationRow
               item={item}
               onDelete={() => deleteNotification(item.id)}
+              onRead={() => markOneRead(item.id)}
               colors={colors}
             />
           )}

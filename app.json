@@ -16,7 +16,9 @@
         "NSLocationAlwaysUsageDescription": "Trust-a-Tradie uses your location to notify tradies of nearby jobs.",
         "NSCameraUsageDescription": "Used to take photos for job posts and portfolio images.",
         "NSPhotoLibraryUsageDescription": "Used to upload photos for jobs, portfolio, and documents.",
-        "NSMicrophoneUsageDescription": "Required for camera access."
+        "NSMicrophoneUsageDescription": "Required for camera access.",
+        "NSCalendarsUsageDescription": "Trust-a-Tradie adds your booked jobs to your calendar.",
+        "NSCalendarsFullAccessUsageDescription": "Trust-a-Tradie adds your booked jobs to your calendar."
       },
       "config": {
         "googleMapsApiKey": ""
@@ -39,7 +41,9 @@
         "READ_MEDIA_IMAGES",
         "READ_MEDIA_VIDEO",
         "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE"
+        "VIBRATE",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR"
       ],
       "config": {
         "googleMaps": {
@@ -91,7 +95,8 @@
           "sounds": []
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-calendar"
     ],
     "experiments": {
       "typedRoutes": false,
