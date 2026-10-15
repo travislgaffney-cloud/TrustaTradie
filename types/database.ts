@@ -15,13 +15,6 @@ export type JobStatus =
 
 export type QuoteStatus = 'pending' | 'accepted' | 'rejected' | 'withdrawn';
 
-export type PaymentStatus =
-  | 'pending'
-  | 'held_in_escrow'
-  | 'released'
-  | 'refunded'
-  | 'failed';
-
 export type NotificationType =
   | 'new_job_nearby'
   | 'new_quote_received'
@@ -31,7 +24,18 @@ export type NotificationType =
   | 'job_completed'
   | 'payment_released'
   | 'new_message'
-  | 'rating_received';
+  | 'rating_received'
+  | 'site_visit_requested';
+
+export type TransactionStatus =
+  | 'quoted'
+  | 'accepted'
+  | 'funds_held'
+  | 'completed_by_provider'
+  | 'confirmed_by_customer'
+  | 'released'
+  | 'disputed'
+  | 'cancelled';
 
 export type DocumentType = 'licence' | 'insurance' | 'certificate' | 'other';
 
@@ -53,6 +57,7 @@ export interface Profile {
   bank_account_number: string | null;
   bank_branch_code: string | null;
   bank_account_type: string | null;
+  tradesafe_token: string | null;
   onboarding_complete: boolean;
   is_suspended: boolean;
   created_at: string;
@@ -71,6 +76,9 @@ export interface TradieProfile {
   total_reviews: number;
   completed_jobs: number;
   service_radius_km: number;
+  service_towns: string[];
+  instagram_url: string | null;
+  facebook_url: string | null;
 }
 
 export interface Job {
@@ -83,12 +91,14 @@ export interface Job {
   address_text: string;
   suburb: string | null;
   province: string | null;
+  town: string | null;
   ai_image_url: string | null;
   budget_min: number | null;
   budget_max: number | null;
   preferred_start: string | null;
   accepted_quote_id: string | null;
   scheduled_at: string | null;
+  completion_photo_url: string | null;
   view_count: number;
   created_at: string;
   updated_at: string;
@@ -129,26 +139,29 @@ export interface Quote {
   job?: Job;
 }
 
-export interface Payment {
+// Internal ledger row tracking escrow-like status for a job's payment lifecycle,
+// mirrored against a real TradeSafe transaction via tradesafe_transaction_id.
+export interface Transaction {
   id: string;
   job_id: string;
   quote_id: string;
   customer_id: string;
   tradie_id: string;
-  amount_total: number;
-  platform_fee: number;
-  tradie_payout: number;
-  status: PaymentStatus;
-  payfast_payment_id: string | null;
-  payfast_pf_payment_id: string | null;
-  paid_at: string | null;
-  released_at: string | null;
+  quoted_amount: number;
+  commission_pct: number;
+  status: TransactionStatus;
+  tradesafe_transaction_id: string | null;
+  tradesafe_reference: string | null;
+  tradesafe_allocation_id: string | null;
   created_at: string;
-  // joined fields
-  job?: Job;
-  quote?: Quote;
-  customer?: Profile;
-  tradie?: Profile;
+  updated_at: string;
+}
+
+export interface TransactionStatusHistoryEntry {
+  id: string;
+  transaction_id: string;
+  status: TransactionStatus;
+  changed_at: string;
 }
 
 export interface RatingImage {
@@ -236,7 +249,7 @@ export interface PortfolioImage {
 
 export interface Invoice {
   id: string;
-  payment_id: string;
+  transaction_id: string | null;
   job_id: string;
   tradie_id: string;
   customer_id: string;

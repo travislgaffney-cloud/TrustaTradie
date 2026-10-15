@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -43,8 +43,8 @@ export default function PublicTradieProfileScreen() {
   useEffect(() => {
     if (!tradieId) { setLoading(false); return; }
     Promise.all([
-      supabase.from('profiles').select('*').eq('id', tradieId).single<Profile>(),
-      supabase.from('tradie_profiles').select('*').eq('id', tradieId).single<TradieProfile>(),
+      supabase.from('profiles').select('*').eq('id', tradieId).maybeSingle<Profile>(),
+      supabase.from('tradie_profiles').select('*').eq('id', tradieId).maybeSingle<TradieProfile>(),
       supabase.from('tradie_documents').select('*').eq('tradie_id', tradieId).order('created_at', { ascending: false }),
     ]).then(([{ data: p, error: e1 }, { data: tp, error: e2 }, { data: docs }]) => {
       if (e1) console.error('[TradieProfile] profiles:', e1.message);
@@ -115,6 +115,37 @@ export default function PublicTradieProfileScreen() {
               <Badge key={cat.value} label={`${cat.icon} ${cat.label}`} />
             ))}
           </View>
+
+          {/* Areas covered */}
+          {tradieProfile && tradieProfile.service_towns.length > 0 && (
+            <View style={styles.categories}>
+              {tradieProfile.service_towns.map((town) => (
+                <Badge key={town} label={`📍 ${town}`} />
+              ))}
+            </View>
+          )}
+
+          {/* Social links */}
+          {tradieProfile && (tradieProfile.instagram_url || tradieProfile.facebook_url) && (
+            <View style={styles.socialRow}>
+              {tradieProfile.instagram_url && (
+                <Pressable
+                  style={[styles.socialBtn, { borderColor: colors.border }]}
+                  onPress={() => Linking.openURL(tradieProfile.instagram_url!)}
+                >
+                  <Text style={styles.socialBtnText}>📷 Instagram</Text>
+                </Pressable>
+              )}
+              {tradieProfile.facebook_url && (
+                <Pressable
+                  style={[styles.socialBtn, { borderColor: colors.border }]}
+                  onPress={() => Linking.openURL(tradieProfile.facebook_url!)}
+                >
+                  <Text style={styles.socialBtnText}>👍 Facebook</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
 
           {/* Bio */}
           {profile.bio && (
@@ -223,6 +254,9 @@ const styles = StyleSheet.create({
   stats: { fontSize: 12, color: 'rgba(255,255,255,0.85)' },
   content: { padding: 16, gap: 14 },
   categories: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  socialRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  socialBtn: { borderWidth: 1.5, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 9 },
+  socialBtnText: { fontSize: 13, fontWeight: '600' },
   bio: { fontSize: 15, lineHeight: 22 },
   statsCard: { gap: 10 },
   statRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

@@ -2,8 +2,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { z } from 'zod';
+import { TownSelector } from '@/components/tradie/town-selector';
+import { KeyboardAvoidingView } from '@/components/ui/keyboard-avoiding-view';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Colors, Brand } from '@/constants/theme';
@@ -18,7 +20,8 @@ const schema = z.object({
   bio: z.string().optional(),
   yearsExperience: z.string().optional(),
   hourlyRate: z.string().optional(),
-  serviceRadius: z.string().optional(),
+  instagramUrl: z.string().optional(),
+  facebookUrl: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -29,6 +32,7 @@ export default function EditProfileScreen() {
   const { user, profile, tradieProfile, setProfile, setTradieProfile } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<TradeCategory[]>(tradieProfile?.categories ?? []);
+  const [serviceTowns, setServiceTowns] = useState<string[]>(tradieProfile?.service_towns ?? []);
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -38,7 +42,8 @@ export default function EditProfileScreen() {
       bio: profile?.bio ?? '',
       yearsExperience: tradieProfile?.years_experience?.toString() ?? '',
       hourlyRate: tradieProfile?.hourly_rate?.toString() ?? '',
-      serviceRadius: tradieProfile?.service_radius_km?.toString() ?? '50',
+      instagramUrl: tradieProfile?.instagram_url ?? '',
+      facebookUrl: tradieProfile?.facebook_url ?? '',
     },
   });
 
@@ -60,7 +65,9 @@ export default function EditProfileScreen() {
         categories,
         years_experience: data.yearsExperience ? Number(data.yearsExperience) : null,
         hourly_rate: data.hourlyRate ? Number(data.hourlyRate) : null,
-        service_radius_km: data.serviceRadius ? Number(data.serviceRadius) : 50,
+        service_towns: serviceTowns,
+        instagram_url: data.instagramUrl || null,
+        facebook_url: data.facebookUrl || null,
       }).eq('id', user.id).select().single(),
     ]);
 
@@ -80,7 +87,7 @@ export default function EditProfileScreen() {
         <Text style={[styles.navTitle, { color: colors.text }]}>Edit Profile</Text>
         <View style={{ width: 60 }} />
       </View>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.form}>
           <Controller control={control} name="fullName" render={({ field }) => (
@@ -98,9 +105,15 @@ export default function EditProfileScreen() {
           <Controller control={control} name="hourlyRate" render={({ field }) => (
             <Input label="Hourly rate (R, optional)" keyboardType="numeric" onChangeText={field.onChange} value={field.value} />
           )} />
-          <Controller control={control} name="serviceRadius" render={({ field }) => (
-            <Input label="Service radius (km)" keyboardType="numeric" hint="Max distance to travel for jobs" onChangeText={field.onChange} value={field.value} />
+          <Controller control={control} name="instagramUrl" render={({ field }) => (
+            <Input label="Instagram link (optional)" placeholder="https://instagram.com/yourpage" autoCapitalize="none" autoCorrect={false} keyboardType="url" onChangeText={field.onChange} value={field.value} />
           )} />
+          <Controller control={control} name="facebookUrl" render={({ field }) => (
+            <Input label="Facebook link (optional)" placeholder="https://facebook.com/yourpage" autoCapitalize="none" autoCorrect={false} keyboardType="url" onChangeText={field.onChange} value={field.value} />
+          )} />
+
+          <Text style={[styles.catLabel, { color: colors.text }]}>Towns you service</Text>
+          <TownSelector towns={serviceTowns} onChange={setServiceTowns} />
 
           <Text style={[styles.catLabel, { color: colors.text }]}>Trade categories</Text>
           <View style={styles.categories}>
