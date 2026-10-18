@@ -11,9 +11,16 @@ import {
 } from 'react-native';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
-import type { Payment, Quote } from '@/types/database';
+import type { Transaction, Quote, TransactionStatus } from '@/types/database';
+
+const ESCROW_STATUSES: TransactionStatus[] = ['funds_held', 'completed_by_provider', 'confirmed_by_customer'];
+
+function payoutOf(t: Transaction): number {
+  return t.quoted_amount - t.quoted_amount * t.commission_pct;
+}
 
 interface BusinessStats {
   completedJobs: number;
@@ -44,13 +51,13 @@ export default function BusinessToolsScreen() {
     setLoading(true);
 
     const [
-      { data: payments },
+      { data: transactions },
       { data: allQuotes },
       { data: completedJobs },
       { data: inProgressJobs },
     ] = await Promise.all([
       supabase
-        .from('payments')
+        .from('transactions')
         .select('*')
         .eq('tradie_id', user.id),
       supabase
@@ -69,13 +76,13 @@ export default function BusinessToolsScreen() {
         .eq('status', 'accepted'),
     ]);
 
-    const paymentList = (payments as Payment[]) ?? [];
+    const transactionList = (transactions as Transaction[]) ?? [];
     const quoteList = (allQuotes as Quote[]) ?? [];
 
-    const released = paymentList.filter((p) => p.status === 'released');
-    const escrow = paymentList.filter((p) => p.status === 'held_in_escrow');
-    const totalEarned = released.reduce((s, p) => s + p.tradie_payout, 0);
-    const inEscrowAmount = escrow.reduce((s, p) => s + p.tradie_payout, 0);
+    const released = transactionList.filter((t) => t.status === 'released');
+    const escrow = transactionList.filter((t) => ESCROW_STATUSES.includes(t.status));
+    const totalEarned = released.reduce((s, t) => s + payoutOf(t), 0);
+    const inEscrowAmount = escrow.reduce((s, t) => s + payoutOf(t), 0);
 
     const pending = quoteList.filter((q) => q.status === 'pending');
     const accepted = quoteList.filter((q) => q.status === 'accepted');
@@ -85,7 +92,7 @@ export default function BusinessToolsScreen() {
     const completed = (completedJobs ?? []).filter(
       (q: any) => q.job && ['completed', 'pending_completion'].includes(q.job.status)
     );
-    const completedRevenue = released.reduce((s, p) => s + p.amount_total, 0);
+    const completedRevenue = released.reduce((s, t) => s + t.quoted_amount, 0);
 
     const inProg = (inProgressJobs ?? []).filter(
       (q: any) => q.job && q.job.status === 'in_progress'
@@ -93,7 +100,7 @@ export default function BusinessToolsScreen() {
     const inProgValue = inProg.reduce((s: number, q: any) => s + (q.amount ?? 0), 0);
 
     const avgJobValue = released.length > 0
-      ? released.reduce((s, p) => s + p.amount_total, 0) / released.length
+      ? released.reduce((s, t) => s + t.quoted_amount, 0) / released.length
       : 0;
 
     // Monthly earnings (last 6 months)
@@ -104,13 +111,11 @@ export default function BusinessToolsScreen() {
       const key = d.toLocaleDateString('en-ZA', { month: 'short', year: '2-digit' });
       monthlyMap.set(key, 0);
     }
-    released.forEach((p) => {
-      if (p.released_at) {
-        const d = new Date(p.released_at);
-        const key = d.toLocaleDateString('en-ZA', { month: 'short', year: '2-digit' });
-        if (monthlyMap.has(key)) {
-          monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + p.tradie_payout);
-        }
+    released.forEach((t) => {
+      const d = new Date(t.updated_at);
+      const key = d.toLocaleDateString('en-ZA', { month: 'short', year: '2-digit' });
+      if (monthlyMap.has(key)) {
+        monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + payoutOf(t));
       }
     });
     const monthlyEarnings = Array.from(monthlyMap.entries()).map(([month, amount]) => ({
@@ -140,6 +145,8 @@ export default function BusinessToolsScreen() {
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
+
+  useRefreshOnFocus(fetchStats);
 
   const maxMonthly = stats
     ? Math.max(...stats.monthlyEarnings.map((m) => m.amount), 1)

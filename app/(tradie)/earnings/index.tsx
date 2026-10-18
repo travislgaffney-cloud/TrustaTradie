@@ -6,31 +6,51 @@ import { Card } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
-import type { Payment } from '@/types/database';
+import type { Transaction, Job, TransactionStatus } from '@/types/database';
+
+type TransactionWithJob = Transaction & { job?: Job };
+
+const ESCROW_STATUSES: TransactionStatus[] = ['funds_held', 'completed_by_provider', 'confirmed_by_customer'];
+
+function payoutOf(t: Transaction): number {
+  return t.quoted_amount - t.quoted_amount * t.commission_pct;
+}
+
+function statusLabel(status: TransactionStatus): string {
+  if (status === 'released') return '✅ Released';
+  if (ESCROW_STATUSES.includes(status)) return '🔒 In Escrow';
+  if (status === 'accepted') return '⏳ Awaiting Payment';
+  if (status === 'disputed') return '⚖️ Disputed';
+  return status.replace(/_/g, ' ');
+}
 
 export default function EarningsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { user } = useAuthStore();
-  const [payments, setPayments] = useState<Payment[]>([]);
+  const [transactions, setTransactions] = useState<TransactionWithJob[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  function load() {
     if (!user) return;
     supabase
-      .from('payments')
+      .from('transactions')
       .select('*, job:jobs(title)')
       .eq('tradie_id', user.id)
       .order('created_at', { ascending: false })
-      .then(({ data }) => { setPayments((data as Payment[]) ?? []); setLoading(false); });
-  }, [user]);
+      .then(({ data }) => { setTransactions((data as TransactionWithJob[]) ?? []); setLoading(false); });
+  }
 
-  const released = payments.filter((p) => p.status === 'released');
-  const pending = payments.filter((p) => p.status === 'held_in_escrow');
-  const totalEarned = released.reduce((s, p) => s + p.tradie_payout, 0);
-  const pendingAmount = pending.reduce((s, p) => s + p.tradie_payout, 0);
+  useEffect(load, [user]);
+  useRefreshOnFocus(load);
+
+  const released = transactions.filter((t) => t.status === 'released');
+  const pending = transactions.filter((t) => ESCROW_STATUSES.includes(t.status));
+  const totalEarned = released.reduce((s, t) => s + payoutOf(t), 0);
+  const pendingAmount = pending.reduce((s, t) => s + payoutOf(t), 0);
 
   if (loading) return <LoadingSpinner full />;
 
@@ -54,28 +74,31 @@ export default function EarningsScreen() {
         <Button variant="secondary" onPress={() => router.push('/(tradie)/earnings/bank-details')}>
           🏦 Update Bank Details
         </Button>
+        <Button variant="secondary" onPress={() => router.push('/(tradie)/earnings/report')}>
+          🧾 SARS Report
+        </Button>
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Payment History</Text>
-        {payments.length === 0 ? (
+        {transactions.length === 0 ? (
           <Text style={[styles.empty, { color: colors.textSecondary }]}>No payments yet.</Text>
         ) : (
-          payments.map((p) => (
-            <Card key={p.id} style={styles.paymentCard}>
+          transactions.map((t) => (
+            <Card key={t.id} style={styles.paymentCard}>
               <Text style={[styles.paymentJob, { color: colors.text }]} numberOfLines={1}>
-                {(p.job as unknown as Record<string, unknown>)?.title as string ?? 'Job'}
+                {t.job?.title ?? 'Job'}
               </Text>
               <View style={styles.paymentRow}>
-                <Text style={[styles.paymentAmount, { color: colors.text }]}>R{p.tradie_payout.toFixed(2)}</Text>
+                <Text style={[styles.paymentAmount, { color: colors.text }]}>R{payoutOf(t).toFixed(2)}</Text>
                 <Text style={[
                   styles.paymentStatus,
-                  { color: p.status === 'released' ? '#166534' : p.status === 'held_in_escrow' ? '#92400e' : colors.textSecondary },
+                  { color: t.status === 'released' ? '#166534' : ESCROW_STATUSES.includes(t.status) ? '#92400e' : colors.textSecondary },
                 ]}>
-                  {p.status === 'released' ? '✅ Released' : p.status === 'held_in_escrow' ? '🔒 In Escrow' : p.status}
+                  {statusLabel(t.status)}
                 </Text>
               </View>
-              {p.released_at && (
+              {t.status === 'released' && (
                 <Text style={[styles.paymentDate, { color: colors.textSecondary }]}>
-                  Released {new Date(p.released_at).toLocaleDateString('en-ZA')}
+                  Released {new Date(t.updated_at).toLocaleDateString('en-ZA')}
                 </Text>
               )}
             </Card>

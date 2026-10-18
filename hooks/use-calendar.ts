@@ -2,7 +2,8 @@ import { format } from 'date-fns';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { addJobToDeviceCalendar } from '@/lib/device-calendar';
-import { sendPushToUser } from '@/lib/notifications';
+import { notifyUser } from '@/lib/notifications';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import type { BookingProposal, Job } from '@/types/database';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -10,13 +11,19 @@ export function useBookingProposals(conversationId: string) {
   const { user } = useAuthStore();
   const [proposals, setProposals] = useState<BookingProposal[]>([]);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  // Unique suffix prevents channel name collision if this effect ever re-runs
+  // before the previous instance's cleanup has finished removing its channel
+  // (e.g. a screen kept mounted-but-hidden by react-navigation's Offscreen/
+  // Activity reconnect, rather than a clean unmount) — same pattern already
+  // used in use-quotes.ts, use-messages.ts, and use-notifications.ts.
+  const instanceId = useRef(Math.random().toString(36).slice(2, 7)).current;
 
   useEffect(() => {
     if (!conversationId) return;
     fetchProposals();
 
     channelRef.current = supabase
-      .channel(`booking_proposals:${conversationId}`)
+      .channel(`booking_proposals:${conversationId}:${instanceId}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -32,6 +39,8 @@ export function useBookingProposals(conversationId: string) {
       }
     };
   }, [conversationId]);
+
+  useRefreshOnFocus(() => { if (conversationId) fetchProposals(); });
 
   async function fetchProposals() {
     const { data } = await supabase
@@ -55,15 +64,13 @@ export function useBookingProposals(conversationId: string) {
 
     const label = format(datetime, "d MMM 'at' HH:mm");
     const body = `New booking proposal for ${label}`;
-    await supabase.from('notifications').insert({
-      user_id: recipientId,
+    await notifyUser({
+      userId: recipientId,
       type: 'new_message',
       title: 'Booking Proposal',
       body,
       data: { conversation_id: conversationId },
-      is_read: false,
     });
-    sendPushToUser(recipientId, 'Booking Proposal', body, { conversation_id: conversationId });
   }
 
   async function respondToProposal(proposal: BookingProposal, accept: boolean, recipientId: string) {
@@ -99,15 +106,13 @@ export function useBookingProposals(conversationId: string) {
     // Notify the proposer that their proposal was accepted
     const dt = new Date(proposal.proposed_datetime);
     const body = `Your booking for "${job.title}" on ${format(dt, "d MMM 'at' HH:mm")} was confirmed!`;
-    await supabase.from('notifications').insert({
-      user_id: recipientId,
+    await notifyUser({
+      userId: recipientId,
       type: 'quote_accepted',
       title: 'Booking Confirmed!',
       body,
       data: { conversation_id: conversationId },
-      is_read: false,
     });
-    sendPushToUser(recipientId, 'Booking Confirmed!', body, { conversation_id: conversationId });
   }
 
   return { proposals, proposeBooking, respondToProposal };
@@ -122,6 +127,8 @@ export function useScheduledJobs() {
     if (!user) return;
     fetchJobs();
   }, [user]);
+
+  useRefreshOnFocus(() => { if (user) fetchJobs(); });
 
   async function fetchJobs() {
     if (!user) return;
