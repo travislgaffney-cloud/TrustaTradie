@@ -1,10 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
+// useSearchParams() opts the page out of static prerendering unless the
+// component that calls it sits inside a Suspense boundary — without this
+// split, `next build` fails outright on this page (confirmed: this was
+// breaking production builds before today, undetected because CI only runs
+// tsc, never an actual `next build`).
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
