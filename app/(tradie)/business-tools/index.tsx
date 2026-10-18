@@ -285,6 +285,16 @@ export default function BusinessToolsScreen() {
               <Text style={[styles.linkText, { color: colors.text }]}>Update Bank Details</Text>
               <Text style={[styles.linkArrow, { color: colors.textSecondary }]}>›</Text>
             </Pressable>
+
+            {/* Supplier Rewards */}
+            <Pressable
+              style={[styles.linkCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => router.push('/(tradie)/rewards')}
+            >
+              <Text style={styles.linkIcon}>🎁</Text>
+              <Text style={[styles.linkText, { color: colors.text }]}>Supplier Rewards</Text>
+              <Text style={[styles.linkArrow, { color: colors.textSecondary }]}>›</Text>
+            </Pressable>
           </>
         )}
       </ScrollView>

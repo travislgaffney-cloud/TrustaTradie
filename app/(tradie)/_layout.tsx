@@ -49,6 +49,7 @@ export default function TradieLayout() {
       <Tabs.Screen name="earnings" options={{ href: null }} />
       <Tabs.Screen name="calendar" options={{ href: null }} />
       <Tabs.Screen name="business-tools" options={{ href: null }} />
+      <Tabs.Screen name="rewards" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -28,6 +28,63 @@ export type NotificationType =
   | 'site_visit_requested'
   | 'site_visit_completed';
 
+export type RewardSlipStatus = 'pending' | 'approved' | 'rejected';
+
+export interface Supplier {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  report_emails: string[];
+  reward_pct: number;
+  commission_pct: number;
+  min_slip_amount: number;
+  active_from: string | null;
+  active_to: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TradieSupplierAccount {
+  id: string;
+  tradie_id: string;
+  supplier_id: string;
+  account_number: string;
+  consent_given_at: string;
+  consent_version: string;
+  created_at: string;
+  updated_at: string;
+  // joined fields
+  supplier?: Supplier;
+}
+
+export interface RewardSlip {
+  id: string;
+  tradie_id: string;
+  supplier_id: string;
+  image_path: string;
+  image_hash: string | null;
+  slip_number: string;
+  slip_date: string;
+  total_amount: number;
+  ocr_supplier_name: string | null;
+  ocr_total: number | null;
+  ocr_date: string | null;
+  ocr_confidence: number | null;
+  status: RewardSlipStatus;
+  flagged_reason: string | null;
+  reward_pct_locked: number | null;
+  reward_amount: number | null;
+  approved_at: string | null;
+  approved_by: string | null;
+  rejected_reason: string | null;
+  report_line_id: string | null;
+  created_at: string;
+  updated_at: string;
+  // joined fields
+  supplier?: Supplier;
+}
+
 export type TransactionStatus =
   | 'quoted'
   | 'accepted'
