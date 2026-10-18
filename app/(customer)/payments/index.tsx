@@ -6,37 +6,44 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
-import type { Payment } from '@/types/database';
+import type { Transaction, Job } from '@/types/database';
+
+type TransactionWithJob = Transaction & { job?: Job };
 
 const STATUS_COLOR: Record<string, { bg: string; text: string }> = {
-  pending: { bg: '#fffbeb', text: '#92400e' },
-  held_in_escrow: { bg: '#dbeafe', text: '#1e40af' },
+  accepted: { bg: '#fffbeb', text: '#92400e' },
+  funds_held: { bg: '#dbeafe', text: '#1e40af' },
+  completed_by_provider: { bg: '#dbeafe', text: '#1e40af' },
+  confirmed_by_customer: { bg: '#dbeafe', text: '#1e40af' },
   released: { bg: '#dcfce7', text: '#166534' },
-  refunded: { bg: '#f1f5f9', text: '#64748b' },
-  failed: { bg: '#fee2e2', text: '#991b1b' },
+  disputed: { bg: '#fee2e2', text: '#991b1b' },
+  cancelled: { bg: '#f1f5f9', text: '#64748b' },
 };
 
 export default function CustomerPaymentsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { user } = useAuthStore();
-  const [payments, setPayments] = useState<Payment[]>([]);
+  const [payments, setPayments] = useState<TransactionWithJob[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function fetch() {
     setLoading(true);
     const { data } = await supabase
-      .from('payments')
+      .from('transactions')
       .select('*, job:jobs(title, category)')
       .eq('customer_id', user!.id)
       .order('created_at', { ascending: false });
-    setPayments((data as Payment[]) ?? []);
+    setPayments((data as TransactionWithJob[]) ?? []);
     setLoading(false);
   }
 
   useEffect(() => { if (user) fetch(); }, [user]);
+
+  useRefreshOnFocus(() => { if (user) fetch(); });
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -49,13 +56,12 @@ export default function CustomerPaymentsScreen() {
         <ScrollView contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={loading} onRefresh={fetch} />}>
           {payments.map((p) => {
             const sc = STATUS_COLOR[p.status] ?? { bg: '#f1f5f9', text: '#64748b' };
-            const job = p.job as unknown as { title: string } | undefined;
             return (
-              <Pressable key={p.id} onPress={() => router.push(`/(customer)/payments/${p.id}`)}>
+              <Pressable key={p.id} onPress={() => router.push(`/(customer)/payments/${p.job_id}`)}>
                 <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <View style={styles.cardTop}>
-                    <Text style={[styles.jobTitle, { color: colors.text }]} numberOfLines={1}>{job?.title ?? 'Job'}</Text>
-                    <Text style={[styles.amount, { color: colors.text }]}>R{p.amount_total.toLocaleString()}</Text>
+                    <Text style={[styles.jobTitle, { color: colors.text }]} numberOfLines={1}>{p.job?.title ?? 'Job'}</Text>
+                    <Text style={[styles.amount, { color: colors.text }]}>R{p.quoted_amount.toLocaleString()}</Text>
                   </View>
                   <View style={styles.cardBottom}>
                     <Text style={[styles.date, { color: colors.textSecondary }]}>

@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EscrowTimeline } from '@/components/payments/escrow-timeline';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,8 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { PLATFORM_FEE } from '@/constants/config';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { getCommissionPct } from '@/hooks/use-platform-settings';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
 import type { Quote } from '@/types/database';
@@ -22,50 +24,55 @@ export default function AcceptQuoteScreen() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
+  const [commissionPct, setCommissionPct] = useState(PLATFORM_FEE);
 
-  useEffect(() => {
+  function load() {
+    // tradie_profiles has no direct FK from quotes — it only reaches profiles,
+    // so it has to be nested inside the profiles embed, not a sibling of it
+    // (a bare top-level `tradie_profiles(*)` here 400s on every single quote,
+    // which silently produced a blank screen since the error wasn't checked).
     supabase
       .from('quotes')
-      .select('*, tradie:profiles!quotes_tradie_id_fkey(*), tradie_profile:tradie_profiles(*)')
+      .select('*, tradie:profiles!quotes_tradie_id_fkey(*, tradie_profiles(*))')
       .eq('id', quoteId)
-      .single<Quote>()
-      .then(({ data }) => { setQuote(data ?? null); setLoading(false); });
-  }, [quoteId]);
+      .single()
+      .then(({ data, error }) => {
+        if (error) { console.error('[AcceptQuote] fetch error:', error.message); setQuote(null); setLoading(false); return; }
+        const q = data as any;
+        if (q) q.tradie_profile = q.tradie?.tradie_profiles ?? null;
+        setQuote((q as Quote) ?? null);
+        setLoading(false);
+      });
+    getCommissionPct().then(setCommissionPct);
+  }
+
+  useEffect(load, [quoteId]);
+  useRefreshOnFocus(load);
 
   async function handleAcceptAndPay() {
     if (!quote || !user) return;
     setAccepting(true);
 
-    // 1. Accept the quote in DB
-    await acceptQuote(quoteId, jobId);
-
-    // 2. Create a payment record
-    const fee = quote.amount * PLATFORM_FEE;
-    const payout = quote.amount - fee;
-
-    const { data: payment } = await supabase.from('payments').insert({
-      job_id: jobId,
-      quote_id: quoteId,
-      customer_id: user.id,
-      tradie_id: quote.tradie_id,
-      amount_total: quote.amount,
-      platform_fee: fee,
-      tradie_payout: payout,
-      status: 'pending',
-    }).select().single();
-
-    setAccepting(false);
-
-    // 3. Navigate to PayFast checkout
-    if (payment) {
-      router.push(`/(customer)/payments/checkout?paymentId=${payment.id}`);
+    try {
+      // Accepts the quote and creates the internal transaction ledger row (status 'accepted').
+      // Funds aren't marked as held until the customer actually pays on the next screen.
+      await acceptQuote(quoteId, jobId);
+      router.push(`/(customer)/jobs/${jobId}/pay`);
+    } catch (err) {
+      Alert.alert(
+        'Could not accept quote',
+        err instanceof Error ? err.message : 'Something went wrong. Please try again.'
+      );
+    } finally {
+      setAccepting(false);
     }
   }
 
   if (loading) return <LoadingSpinner full />;
   if (!quote) return null;
 
-  const fee = quote.amount * PLATFORM_FEE;
+  const fee = quote.amount * commissionPct;
+  const feePctLabel = (commissionPct * 100).toFixed(0);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -111,7 +118,7 @@ export default function AcceptQuoteScreen() {
             <Text style={[styles.breakdownValue, { color: colors.text }]}>R{quote.amount.toLocaleString()}</Text>
           </View>
           <View style={styles.breakdownRow}>
-            <Text style={[styles.breakdownLabel, { color: colors.textSecondary }]}>Service fee (5%)</Text>
+            <Text style={[styles.breakdownLabel, { color: colors.textSecondary }]}>Service fee ({feePctLabel}%)</Text>
             <Text style={[styles.breakdownValue, { color: colors.textSecondary }]}>Included</Text>
           </View>
           <View style={[styles.breakdownRow, styles.totalRow]}>
@@ -119,22 +126,22 @@ export default function AcceptQuoteScreen() {
             <Text style={[styles.totalAmount, { color: colors.text }]}>R{quote.amount.toLocaleString()}</Text>
           </View>
           <Text style={[styles.feeNote, { color: colors.textSecondary }]}>
-            Trust-a-Tradie retains R{fee.toFixed(2)} (5%) as a service fee. The tradie receives R{(quote.amount - fee).toFixed(2)} when the job is complete.
+            Trust-a-Tradie retains R{fee.toFixed(2)} ({feePctLabel}%) as a service fee. The tradie receives R{(quote.amount - fee).toFixed(2)} when the job is complete.
           </Text>
         </Card>
 
         {/* Escrow explanation */}
         <Card style={styles.escrowCard}>
           <Text style={[styles.escrowTitle, { color: colors.text }]}>🔒 How escrow works</Text>
-          <EscrowTimeline status="pending" />
+          <EscrowTimeline status="accepted" />
         </Card>
 
         <Button size="lg" loading={accepting} onPress={handleAcceptAndPay}>
-          Pay R{quote.amount.toLocaleString()} Securely →
+          Accept & Continue to Payment →
         </Button>
 
         <Text style={[styles.disclaimer, { color: colors.textSecondary }]}>
-          Payment is processed securely by PayFast. Funds are held until you confirm the job is complete.
+          Payment is processed securely via TradeSafe. Funds are held in escrow until you confirm the job is complete.
         </Text>
       </ScrollView>
     </SafeAreaView>

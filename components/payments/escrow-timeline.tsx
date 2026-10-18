@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import type { PaymentStatus } from '@/types/database';
+import type { TransactionStatus } from '@/types/database';
 
 interface Step {
   label: string;
@@ -10,25 +10,28 @@ interface Step {
   status: 'done' | 'active' | 'pending';
 }
 
-function getSteps(paymentStatus: PaymentStatus): Step[] {
-  const steps: { label: string; description: string; paymentStatus: PaymentStatus }[] = [
-    { label: 'Payment Made', description: 'Customer paid via PayFast', paymentStatus: 'held_in_escrow' },
-    { label: 'Funds Held', description: 'Money secured in escrow', paymentStatus: 'held_in_escrow' },
-    { label: 'Job In Progress', description: 'Tradie completing the work', paymentStatus: 'held_in_escrow' },
-    { label: 'Payment Released', description: '95% paid to tradie', paymentStatus: 'released' },
-  ];
+const ORDER: TransactionStatus[] = ['accepted', 'funds_held', 'completed_by_provider', 'confirmed_by_customer', 'released'];
 
-  const ORDER: PaymentStatus[] = ['pending', 'held_in_escrow', 'released'];
-  const currentIdx = ORDER.indexOf(paymentStatus);
+const STEP_DEFS: { label: string; description: string; target: TransactionStatus }[] = [
+  { label: 'Payment Held in Escrow', description: 'Funds secured via TradeSafe', target: 'funds_held' },
+  { label: 'Job Completed', description: 'Tradie marked the job as done', target: 'completed_by_provider' },
+  { label: 'Confirmed by You', description: 'You approved the completed work', target: 'confirmed_by_customer' },
+  { label: 'Payment Released', description: 'Funds paid out, minus commission', target: 'released' },
+];
 
-  return steps.map((s, i) => ({
-    label: s.label,
-    description: s.description,
-    status: i < currentIdx ? 'done' : i === currentIdx ? 'active' : 'pending',
-  }));
+function getSteps(status: TransactionStatus): Step[] {
+  const currentIdx = ORDER.indexOf(status);
+  return STEP_DEFS.map((d) => {
+    const targetIdx = ORDER.indexOf(d.target);
+    return {
+      label: d.label,
+      description: d.description,
+      status: currentIdx > targetIdx ? 'done' : currentIdx === targetIdx ? 'active' : 'pending',
+    };
+  });
 }
 
-export function EscrowTimeline({ status }: { status: PaymentStatus }) {
+export function EscrowTimeline({ status }: { status: TransactionStatus }) {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const steps = getSteps(status);
