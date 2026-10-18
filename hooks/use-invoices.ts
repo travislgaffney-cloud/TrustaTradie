@@ -1,27 +1,30 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { sendPushToUser } from '@/lib/notifications';
+import { notifyUser } from '@/lib/notifications';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import type { Invoice } from '@/types/database';
 
-export function useInvoice(paymentId: string) {
+export function useInvoice(transactionId: string) {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!paymentId) return;
+    if (!transactionId) return;
     setLoading(true);
     const { data } = await supabase
       .from('invoices')
       .select('*')
-      .eq('payment_id', paymentId)
+      .eq('transaction_id', transactionId)
       .maybeSingle();
     setInvoice(data as Invoice | null);
     setLoading(false);
-  }, [paymentId]);
+  }, [transactionId]);
 
   useEffect(() => {
     fetch();
   }, [fetch]);
+
+  useRefreshOnFocus(fetch);
 
   return { invoice, loading, refresh: fetch };
 }
@@ -33,7 +36,7 @@ async function generateInvoiceNumber(): Promise<string> {
 }
 
 export async function generateInvoice(params: {
-  paymentId: string;
+  transactionId: string;
   jobId: string;
   tradieId: string;
   customerId: string;
@@ -48,7 +51,7 @@ export async function generateInvoice(params: {
   const { data, error } = await supabase
     .from('invoices')
     .insert({
-      payment_id: params.paymentId,
+      transaction_id: params.transactionId,
       job_id: params.jobId,
       tradie_id: params.tradieId,
       customer_id: params.customerId,
@@ -65,21 +68,19 @@ export async function generateInvoice(params: {
 
   // Notify customer
   const body = `Invoice ${invoiceNumber} for "${params.jobTitle}" is ready to view`;
-  await supabase.from('notifications').insert({
-    user_id: params.customerId,
+  await notifyUser({
+    userId: params.customerId,
     type: 'payment_released',
     title: 'Invoice Available',
     body,
-    data: { payment_id: params.paymentId },
-    is_read: false,
+    data: { job_id: params.jobId },
   });
-  sendPushToUser(params.customerId, 'Invoice Available', body);
 
   return data;
 }
 
 export async function uploadInvoice(params: {
-  paymentId: string;
+  transactionId: string;
   jobId: string;
   tradieId: string;
   customerId: string;
@@ -92,7 +93,7 @@ export async function uploadInvoice(params: {
   const { data, error } = await supabase
     .from('invoices')
     .insert({
-      payment_id: params.paymentId,
+      transaction_id: params.transactionId,
       job_id: params.jobId,
       tradie_id: params.tradieId,
       customer_id: params.customerId,
@@ -108,15 +109,13 @@ export async function uploadInvoice(params: {
   if (error) throw error;
 
   const body = `Invoice ${invoiceNumber} for "${params.jobTitle}" is ready to view`;
-  await supabase.from('notifications').insert({
-    user_id: params.customerId,
+  await notifyUser({
+    userId: params.customerId,
     type: 'payment_released',
     title: 'Invoice Available',
     body,
-    data: { payment_id: params.paymentId },
-    is_read: false,
+    data: { job_id: params.jobId },
   });
-  sendPushToUser(params.customerId, 'Invoice Available', body);
 
   return data;
 }

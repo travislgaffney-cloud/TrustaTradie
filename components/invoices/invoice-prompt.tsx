@@ -37,7 +37,7 @@ export function InvoicePrompt({
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const [loading, setLoading] = useState(false);
-  const [paymentData, setPaymentData] = useState<{ id: string; amount: number; includesVat: boolean } | null>(null);
+  const [txnData, setTxnData] = useState<{ id: string; amount: number; includesVat: boolean } | null>(null);
   const [fetchingPayment, setFetchingPayment] = useState(true);
   const [alreadySent, setAlreadySent] = useState(false);
 
@@ -47,8 +47,8 @@ export function InvoicePrompt({
 
     Promise.all([
       supabase
-        .from('payments')
-        .select('id, amount_total')
+        .from('transactions')
+        .select('id, quoted_amount')
         .eq('job_id', jobId)
         .eq('tradie_id', tradieId)
         .maybeSingle(),
@@ -64,11 +64,11 @@ export function InvoicePrompt({
         .eq('job_id', jobId)
         .eq('tradie_id', tradieId)
         .maybeSingle(),
-    ]).then(([{ data: payment }, { data: quote }, { data: existing }]) => {
-      if (payment) {
-        setPaymentData({
-          id: payment.id,
-          amount: payment.amount_total,
+    ]).then(([{ data: txn }, { data: quote }, { data: existing }]) => {
+      if (txn) {
+        setTxnData({
+          id: txn.id,
+          amount: txn.quoted_amount,
           includesVat: quote?.includes_vat ?? false,
         });
       }
@@ -78,16 +78,16 @@ export function InvoicePrompt({
   }, [visible, jobId, tradieId]);
 
   async function handleGenerate() {
-    if (!paymentData) return;
+    if (!txnData) return;
     setLoading(true);
     try {
       await generateInvoice({
-        paymentId: paymentData.id,
+        transactionId: txnData.id,
         jobId,
         tradieId,
         customerId,
-        amount: paymentData.amount,
-        includesVat: paymentData.includesVat,
+        amount: txnData.amount,
+        includesVat: txnData.includesVat,
         jobTitle,
       });
       Alert.alert('Invoice Sent', 'An invoice has been generated and sent to the customer.');
@@ -100,7 +100,7 @@ export function InvoicePrompt({
   }
 
   async function handleUpload() {
-    if (!paymentData) return;
+    if (!txnData) return;
     const result = await DocumentPicker.getDocumentAsync({
       type: ['application/pdf', 'image/*'],
       copyToCacheDirectory: true,
@@ -111,15 +111,15 @@ export function InvoicePrompt({
     try {
       const asset = result.assets[0];
       const ext = asset.name.split('.').pop() ?? 'pdf';
-      const path = `${tradieId}/${paymentData.id}/${Date.now()}.${ext}`;
+      const path = `${tradieId}/${txnData.id}/${Date.now()}.${ext}`;
       const url = await uploadFile('invoices', path, asset.uri, asset.mimeType ?? 'application/pdf');
 
       await uploadInvoice({
-        paymentId: paymentData.id,
+        transactionId: txnData.id,
         jobId,
         tradieId,
         customerId,
-        amount: paymentData.amount,
+        amount: txnData.amount,
         uploadedUrl: url,
         jobTitle,
       });
@@ -156,12 +156,12 @@ export function InvoicePrompt({
                 You have already sent an invoice for this job.
               </Text>
             </View>
-          ) : !paymentData ? (
+          ) : !txnData ? (
             <View style={styles.sentBox}>
               <Text style={styles.icon}>⏳</Text>
-              <Text style={[styles.title, { color: colors.text }]}>Payment Not Found</Text>
+              <Text style={[styles.title, { color: colors.text }]}>Transaction Not Found</Text>
               <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                No payment record found for this job yet. The customer may not have paid.
+                No transaction record found for this job yet. The customer may not have accepted the quote.
               </Text>
             </View>
           ) : (
@@ -174,10 +174,10 @@ export function InvoicePrompt({
 
               <View style={[styles.amountBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>Invoice amount</Text>
-                <Text style={[styles.amountValue, { color: colors.text }]}>R{paymentData.amount.toLocaleString()}</Text>
-                {paymentData.includesVat && (
+                <Text style={[styles.amountValue, { color: colors.text }]}>R{txnData.amount.toLocaleString()}</Text>
+                {txnData.includesVat && (
                   <Text style={[styles.vatNote, { color: colors.textSecondary }]}>
-                    Includes VAT: R{(paymentData.amount * 0.15 / 1.15).toFixed(2)}
+                    Includes VAT: R{(txnData.amount * 0.15 / 1.15).toFixed(2)}
                   </Text>
                 )}
               </View>
