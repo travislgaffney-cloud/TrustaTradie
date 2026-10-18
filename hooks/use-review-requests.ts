@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { sendPushToUser } from '@/lib/notifications';
+import { notifyUser } from '@/lib/notifications';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useAuthStore } from '@/store/auth-store';
 
 interface ReviewRequest {
@@ -58,6 +59,8 @@ export function useReviewState(jobId: string, customerId: string) {
     fetch();
   }, [fetch]);
 
+  useRefreshOnFocus(fetch);
+
   return { ...state, loading, refresh: fetch };
 }
 
@@ -99,13 +102,11 @@ export async function sendReviewRequest(params: {
   ]);
 
   const body = `${tradie?.full_name ?? 'Your tradie'} would like you to leave a review for "${job?.title ?? 'a completed job'}"`;
-  await supabase.from('notifications').insert({
-    user_id: params.customerId,
+  await notifyUser({
+    userId: params.customerId,
     type: 'rating_received',
     title: 'Review Requested',
     body,
     data: { job_id: params.jobId, action: 'rate' },
-    is_read: false,
   });
-  sendPushToUser(params.customerId, 'Review Requested', body, { job_id: params.jobId });
 }

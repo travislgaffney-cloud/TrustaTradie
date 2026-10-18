@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { sendPushToUser } from '@/lib/notifications';
+import { notifyUser } from '@/lib/notifications';
+import { createTransaction } from '@/hooks/use-transactions';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import type { Quote } from '@/types/database';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -33,6 +35,8 @@ export function useJobQuotes(jobId: string) {
       }
     };
   }, [jobId]);
+
+  useRefreshOnFocus(fetchQuotes);
 
   async function fetchQuotes() {
     setLoading(true);
@@ -99,6 +103,8 @@ export function useMyQuotes() {
     };
   }, [userId, fetchQuotes]);
 
+  useRefreshOnFocus(fetchQuotes);
+
   return { quotes, loading, refresh: fetchQuotes };
 }
 
@@ -152,15 +158,13 @@ export async function submitQuote(params: {
     ]);
 
     const quoteNotifBody = `${tradieProfile?.full_name ?? 'A tradie'} submitted a quote for "${jobDetail?.title ?? 'your job'}" — R${params.amount.toLocaleString()}`;
-    await supabase.from('notifications').insert({
-      user_id: job.customer_id,
+    await notifyUser({
+      userId: job.customer_id,
       type: 'new_quote_received',
       title: 'New Quote Received',
       body: quoteNotifBody,
       data: { job_id: params.jobId, quote_id: data.id },
-      is_read: false,
     });
-    sendPushToUser(job.customer_id, 'New Quote Received', quoteNotifBody, { job_id: params.jobId, quote_id: data.id });
   }
 
   return data;
@@ -178,29 +182,62 @@ export async function acceptQuote(quoteId: string, jobId: string): Promise<void>
     .eq('id', jobId);
 
   // Reject all other pending quotes for this job
-  await supabase
+  const { data: rejectedQuotes } = await supabase
     .from('quotes')
     .update({ status: 'rejected' })
     .eq('job_id', jobId)
     .neq('id', quoteId)
-    .eq('status', 'pending');
+    .eq('status', 'pending')
+    .select('id, tradie_id');
 
   // Notify the tradie their quote was accepted
   const [{ data: quote }, { data: job }] = await Promise.all([
-    supabase.from('quotes').select('tradie_id').eq('id', quoteId).single(),
-    supabase.from('jobs').select('title').eq('id', jobId).single(),
+    supabase.from('quotes').select('tradie_id, amount').eq('id', quoteId).single(),
+    supabase.from('jobs').select('title, customer_id').eq('id', jobId).single(),
   ]);
+
+  if (job && rejectedQuotes && rejectedQuotes.length > 0) {
+    const rejectBody = `Your quote for "${job.title}" wasn't selected this time.`;
+    await Promise.all(
+      rejectedQuotes.map((rq) =>
+        notifyUser({
+          userId: rq.tradie_id,
+          type: 'quote_rejected',
+          title: 'Quote Unsuccessful',
+          body: rejectBody,
+          data: { job_id: jobId, quote_id: rq.id },
+        })
+      )
+    );
+  }
 
   if (quote && job) {
     const acceptBody = `Your quote for "${job.title}" was accepted. Get ready to start the job!`;
-    await supabase.from('notifications').insert({
-      user_id: quote.tradie_id,
+    await notifyUser({
+      userId: quote.tradie_id,
       type: 'quote_accepted',
       title: 'Quote Accepted!',
       body: acceptBody,
       data: { job_id: jobId, quote_id: quoteId },
-      is_read: false,
     });
-    sendPushToUser(quote.tradie_id, 'Quote Accepted!', acceptBody, { job_id: jobId, quote_id: quoteId });
+
+    // Internal ledger — mirrors TradeSafe's transaction lifecycle.
+    // Stays at 'accepted' until the customer actually pays on the TradeSafe (mock) screen,
+    // which is what calls markFundsHeld().
+    await createTransaction({
+      jobId,
+      quoteId,
+      customerId: job.customer_id,
+      tradieId: quote.tradie_id,
+      quotedAmount: quote.amount,
+    });
   }
+}
+
+// Lets a tradie dismiss their own rejected quote card from their list.
+// RLS scopes this to rejected quotes owned by the caller — see migration
+// 035_quotes_tradie_delete_rejected.sql.
+export async function deleteQuote(quoteId: string): Promise<void> {
+  const { error } = await supabase.from('quotes').delete().eq('id', quoteId);
+  if (error) throw error;
 }

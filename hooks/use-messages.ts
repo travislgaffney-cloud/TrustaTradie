@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { sendPushToUser } from '@/lib/notifications';
+import { notifyUser } from '@/lib/notifications';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import type { Conversation, LocalMessage, Message } from '@/types/database';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -60,6 +61,8 @@ export function useConversations() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user]);
+
+  useRefreshOnFocus(() => { if (user) fetch(); });
 
   async function fetch() {
     setLoading(true);
@@ -138,6 +141,8 @@ export function useMessages(conversationId: string) {
       }
     };
   }, [conversationId]);
+
+  useRefreshOnFocus(() => { fetchConversation(); fetchMessages(); });
 
   async function fetchConversation() {
     const { data } = await supabase
@@ -230,16 +235,13 @@ export function useMessages(conversationId: string) {
           ? `${senderName}: ${params.content.slice(0, 100)}`
           : `${senderName} sent an attachment`;
 
-        await supabase.from('notifications').insert({
-          user_id: recipientId,
+        await notifyUser({
+          userId: recipientId,
           type: 'new_message',
           title: 'New Message',
           body: notifBody,
           data: { conversation_id: conversationId },
-          is_read: false,
         });
-
-        sendPushToUser(recipientId, 'New Message', notifBody, { conversation_id: conversationId });
       }
     } else {
       // Remove the optimistic message if DB insert failed

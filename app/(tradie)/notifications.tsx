@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { router } from 'expo-router';
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { FlatList, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -9,6 +9,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNotifications } from '@/hooks/use-notifications';
+import { getNotificationRoute } from '@/lib/notifications';
 import type { Notification } from '@/types/database';
 
 const TYPE_ICONS: Record<string, string> = {
@@ -20,36 +21,12 @@ const TYPE_ICONS: Record<string, string> = {
   payment_released: '💰',
   new_message: '✉️',
   rating_received: '⭐',
+  site_visit_requested: '📅',
 };
 
 function handleNotificationPress(n: Notification) {
-  const data = n.data as Record<string, string> | null;
-  switch (n.type) {
-    case 'quote_accepted':
-      if (data?.job_id) router.push(`/(tradie)/my-quotes` as never);
-      break;
-    case 'new_quote_received':
-      if (data?.job_id) router.push(`/(tradie)/jobs/${data.job_id}` as never);
-      break;
-    case 'job_started':
-    case 'job_completed':
-      router.push('/(tradie)/my-quotes' as never);
-      break;
-    case 'payment_released':
-      router.push('/(tradie)/earnings' as never);
-      break;
-    case 'new_job_nearby':
-      router.push('/(tradie)/jobs' as never);
-      break;
-    case 'new_message':
-      if (data?.conversation_id) router.push(`/(tradie)/messages/${data.conversation_id}` as never);
-      break;
-    case 'rating_received':
-      router.push('/(tradie)/profile' as never);
-      break;
-    default:
-      break;
-  }
+  const path = getNotificationRoute(n.type, n.data as Record<string, string> | null, 'tradie');
+  if (path) router.push(path as never);
 }
 
 function NotificationRow({
@@ -60,7 +37,7 @@ function NotificationRow({
 }: {
   item: Notification;
   onDelete: () => void;
-  onRead: () => void;
+  onRead: () => Promise<void>;
   colors: any;
 }) {
   const swipeableRef = useRef<SwipeableMethods>(null);
@@ -86,7 +63,7 @@ function NotificationRow({
       renderRightActions={renderRightActions}
     >
       <Pressable
-        onPress={() => { onRead(); handleNotificationPress(item); }}
+        onPress={async () => { await onRead(); handleNotificationPress(item); }}
         style={[
           styles.item,
           { borderBottomColor: colors.border, backgroundColor: item.is_read ? colors.background : colors.surface },
@@ -109,16 +86,19 @@ function NotificationRow({
 export default function TradieNotificationsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
-  const { notifications, loading, markAllRead, markOneRead, deleteNotification, refresh } = useNotifications();
-
-  useEffect(() => {
-    markAllRead();
-  }, []);
+  const { notifications, unreadCount, loading, markAllRead, markOneRead, deleteNotification, refresh } = useNotifications();
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: Brand.secondary }]}>
-        <Text style={styles.title}>Alerts</Text>
+        <View style={styles.headerTop}>
+          <Text style={styles.title}>Alerts</Text>
+          {unreadCount > 0 && (
+            <Pressable onPress={markAllRead} hitSlop={8}>
+              <Text style={styles.markAllText}>Mark all read</Text>
+            </Pressable>
+          )}
+        </View>
         <Text style={styles.subtitle}>Swipe left to delete · Tap to take action</Text>
       </View>
 
@@ -148,7 +128,9 @@ export default function TradieNotificationsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20, gap: 4 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   title: { fontSize: 22, fontWeight: '800', color: '#fff' },
+  markAllText: { fontSize: 13, fontWeight: '700', color: '#fff', textDecorationLine: 'underline' },
   subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.75)' },
   item: {
     flexDirection: 'row',

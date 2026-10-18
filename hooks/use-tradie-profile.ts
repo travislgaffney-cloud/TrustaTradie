@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import type { TradieDocument, PortfolioImage, Rating } from '@/types/database';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -12,6 +13,8 @@ export function useTradieDocuments() {
     if (!user) return;
     fetch();
   }, [user]);
+
+  useRefreshOnFocus(() => { if (user) fetch(); });
 
   async function fetch() {
     setLoading(true);
@@ -38,6 +41,8 @@ export function usePortfolioImages(tradieId?: string) {
     fetch();
   }, [id]);
 
+  useRefreshOnFocus(() => { if (id) fetch(); });
+
   async function fetch() {
     setLoading(true);
     const { data } = await supabase
@@ -59,6 +64,8 @@ export function useTradieRatings(tradieId: string) {
   useEffect(() => {
     fetch();
   }, [tradieId]);
+
+  useRefreshOnFocus(fetch);
 
   async function fetch() {
     setLoading(true);

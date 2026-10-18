@@ -2,7 +2,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useRef, useState } from 'react';
 import {
   FlatList,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   SafeAreaView,
@@ -15,6 +14,7 @@ import { BookingProposalCard } from '@/components/chat/booking-proposal-card';
 import { MessageBubble } from '@/components/chat/message-bubble';
 import { MessageInput } from '@/components/chat/message-input';
 import { DateTimePickerModal } from '@/components/ui/date-time-picker-modal';
+import { KeyboardAvoidingView } from '@/components/ui/keyboard-avoiding-view';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -28,7 +28,7 @@ type ChatItem =
   | { kind: 'proposal'; id: string; ts: number; data: BookingProposal };
 
 export default function TradieChatScreen() {
-  const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
+  const { conversationId, from } = useLocalSearchParams<{ conversationId: string; from?: string }>();
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { user } = useAuthStore();
@@ -62,11 +62,10 @@ export default function TradieChatScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
       >
         <View style={[styles.header, { backgroundColor: Brand.secondary }]}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Pressable onPress={() => from === 'notifications' ? router.navigate('/(tradie)/notifications' as never) : router.back()} style={styles.backBtn}>
             <Text style={styles.backText}>← Back</Text>
           </Pressable>
           <View style={styles.headerCenter}>

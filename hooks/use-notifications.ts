@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import type { Notification } from '@/types/database';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -84,6 +85,8 @@ export function useNotifications() {
     return () => { readListeners.delete(handler); };
   }, []);
 
+  useRefreshOnFocus(() => { if (user) fetch(); });
+
   async function fetch() {
     setLoading(true);
     const { data } = await supabase
@@ -108,9 +111,15 @@ export function useNotifications() {
       .eq('is_read', false);
   }
 
-  function markOneRead(id: string) {
+  async function markOneRead(id: string) {
     dispatchReadEvent({ type: 'mark_one', id });
-    supabase.from('notifications').update({ is_read: true }).eq('id', id);
+    // Awaited so callers that navigate away right after (every notification
+    // tap does) can wait for this to land first — otherwise a fast return to
+    // this screen re-triggers useRefreshOnFocus before the write commits,
+    // and the refetch pulls back the stale unread row, making the dot
+    // reappear even though it was actually marked read.
+    const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+    if (error) console.error('[markOneRead] error:', error.message);
   }
 
   async function deleteNotification(id: string) {
