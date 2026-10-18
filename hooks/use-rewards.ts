@@ -101,6 +101,7 @@ export interface SlipOcrResult {
   total?: number | null;
   date?: string | null;
   confidence?: number | null;
+  imageHash?: string | null;
 }
 
 // Uploads to the private reward-slips bucket, then asks the OCR edge
@@ -126,10 +127,11 @@ export async function getSlipImageUrl(path: string): Promise<string | null> {
   return getSignedUrl('reward-slips', path, 300);
 }
 
-// Phase 1: every slip lands at 'pending' — no auto-approval rules yet
-// (those are Phase 2). slip_number/slip_date/total_amount are whatever the
-// tradie confirmed, which may or may not match the OCR-extracted values;
-// that comparison is also a Phase 2 concern.
+// The insert always lands at 'pending' — RLS (migration 046) rejects
+// anything else from a client directly, since a tradie-controlled insert
+// is never trusted to set its own approval outcome. reward-slip-evaluate
+// (service-role) is what actually decides approved/pending/rejected,
+// called immediately after the insert succeeds.
 export async function submitRewardSlip(params: {
   tradieId: string;
   supplierId: string;
@@ -152,11 +154,35 @@ export async function submitRewardSlip(params: {
       ocr_total: params.ocr.total ?? null,
       ocr_date: params.ocr.date ?? null,
       ocr_confidence: params.ocr.confidence ?? null,
+      image_hash: params.ocr.imageHash ?? null,
       status: 'pending',
     })
     .select('*, supplier:suppliers(*)')
     .single();
 
-  if (error) throw error;
-  return data as RewardSlip;
+  if (error) {
+    // Postgres unique_violation on (supplier_id, slip_number) — migration 045.
+    if (error.code === '23505') {
+      throw new Error('A slip with this number has already been submitted for this supplier.');
+    }
+    throw error;
+  }
+
+  const inserted = data as RewardSlip;
+
+  try {
+    await supabase.functions.invoke('reward-slip-evaluate', { body: { slipId: inserted.id } });
+  } catch {
+    // The slip is already saved as 'pending' either way — if evaluation
+    // fails to even run, it just sits in the review queue a little longer
+    // rather than auto-approving instantly. Never block on this.
+  }
+
+  const { data: finalSlip } = await supabase
+    .from('reward_slips')
+    .select('*, supplier:suppliers(*)')
+    .eq('id', inserted.id)
+    .single();
+
+  return (finalSlip as RewardSlip) ?? inserted;
 }

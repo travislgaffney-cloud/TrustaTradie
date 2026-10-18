@@ -49,6 +49,8 @@ describe('getNotificationRoute (lib/notifications.ts)', () => {
       ['new_job_nearby', {}, '/(tradie)/jobs'],
       ['new_message', { conversation_id: 'c1' }, '/(tradie)/messages/c1?from=notifications'],
       ['rating_received', {}, '/(tradie)/profile'],
+      ['reward_slip_approved', {}, '/(tradie)/rewards/slips'],
+      ['reward_slip_rejected', {}, '/(tradie)/rewards/slips'],
     ] as const)('%s with %j routes to %s', (type, data, expected) => {
       expect(getNotificationRoute(type, data, 'tradie')).toBe(expected);
     });

@@ -167,6 +167,9 @@ export function getNotificationRoute(
       return data?.conversation_id ? `/(tradie)/messages/${data.conversation_id}?from=notifications` : null;
     case 'rating_received':
       return '/(tradie)/profile';
+    case 'reward_slip_approved':
+    case 'reward_slip_rejected':
+      return '/(tradie)/rewards/slips';
     default:
       return null;
   }

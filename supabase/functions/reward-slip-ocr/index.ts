@@ -1,6 +1,39 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { TextractClient, AnalyzeExpenseCommand } from 'npm:@aws-sdk/client-textract@3';
+import { Jimp } from 'npm:jimp@1';
 import { checkRateLimit, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
+
+// 8x8 difference hash (dHash): robust to re-compression and minor re-crops
+// in a way an exact file hash isn't, which is the whole point of checking
+// it against OTHER slips later (reward-slip-evaluate) — a tradie re-saving
+// or lightly cropping the same photo still hashes to something very close.
+// Never blocks the upload: any failure here (unexpected image format, a
+// Jimp/Deno incompatibility) just means this one slip skips the
+// near-duplicate check, same "degrade, don't block" rule as OCR itself.
+async function computeImageHash(bytes: Uint8Array): Promise<string | null> {
+  try {
+    const image = await Jimp.read(bytes.buffer as ArrayBuffer);
+    image.resize({ w: 9, h: 8 }).greyscale();
+
+    let bits = '';
+    for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 8; x++) {
+        const left = image.getPixelColor(x, y);
+        const right = image.getPixelColor(x + 1, y);
+        bits += left > right ? '1' : '0';
+      }
+    }
+
+    let hex = '';
+    for (let i = 0; i < bits.length; i += 4) {
+      hex += parseInt(bits.slice(i, i + 4), 2).toString(16);
+    }
+    return hex;
+  } catch (err) {
+    console.warn('[reward-slip-ocr] image hash failed, continuing without it:', err);
+    return null;
+  }
+}
 
 const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -83,9 +116,12 @@ Deno.serve(async (req) => {
     }
 
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const extracted = await extractExpenseFields(bytes);
+    const [extracted, imageHash] = await Promise.all([
+      extractExpenseFields(bytes),
+      computeImageHash(bytes),
+    ]);
 
-    return new Response(JSON.stringify(extracted), {
+    return new Response(JSON.stringify({ ...extracted, imageHash }), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {

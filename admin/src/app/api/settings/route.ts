@@ -6,7 +6,7 @@ import { logAdminAction } from "@/lib/audit";
 export async function GET() {
   const { data, error } = await supabase
     .from("platform_settings")
-    .select("commission_pct, updated_at")
+    .select("commission_pct, reward_auto_approve_threshold, reward_slip_max_age_days, updated_at")
     .eq("id", true)
     .single();
 
@@ -15,15 +15,25 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const { commissionPct } = await req.json();
+  const { commissionPct, rewardAutoApproveThreshold, rewardSlipMaxAgeDays } = await req.json();
 
   if (typeof commissionPct !== "number" || commissionPct < 0 || commissionPct > 1) {
     return NextResponse.json({ error: "commissionPct must be a number between 0 and 1" }, { status: 400 });
   }
+  if (rewardAutoApproveThreshold !== undefined && (typeof rewardAutoApproveThreshold !== "number" || rewardAutoApproveThreshold < 0)) {
+    return NextResponse.json({ error: "rewardAutoApproveThreshold must be a non-negative number" }, { status: 400 });
+  }
+  if (rewardSlipMaxAgeDays !== undefined && (typeof rewardSlipMaxAgeDays !== "number" || rewardSlipMaxAgeDays < 1)) {
+    return NextResponse.json({ error: "rewardSlipMaxAgeDays must be a positive number" }, { status: 400 });
+  }
+
+  const update: Record<string, unknown> = { commission_pct: commissionPct, updated_at: new Date().toISOString() };
+  if (rewardAutoApproveThreshold !== undefined) update.reward_auto_approve_threshold = rewardAutoApproveThreshold;
+  if (rewardSlipMaxAgeDays !== undefined) update.reward_slip_max_age_days = rewardSlipMaxAgeDays;
 
   const { error } = await supabase
     .from("platform_settings")
-    .update({ commission_pct: commissionPct, updated_at: new Date().toISOString() })
+    .update(update)
     .eq("id", true);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -35,7 +45,7 @@ export async function POST(req: Request) {
       action: "settings.update",
       targetTable: "platform_settings",
       targetId: "true",
-      details: { commissionPct },
+      details: { commissionPct, rewardAutoApproveThreshold, rewardSlipMaxAgeDays },
     });
   }
 

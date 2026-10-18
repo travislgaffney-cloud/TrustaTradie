@@ -79,7 +79,7 @@ export default function UploadSlipScreen() {
 
     setSubmitting(true);
     try {
-      await submitRewardSlip({
+      const slip = await submitRewardSlip({
         tradieId: user.id,
         supplierId: selected.id,
         imagePath,
@@ -88,9 +88,14 @@ export default function UploadSlipScreen() {
         totalAmount: amount,
         ocr: ocr ?? { ocrAvailable: false },
       });
-      Alert.alert('Slip submitted', 'Your till slip has been submitted and is pending review.', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+
+      const outcomeCopy: Record<typeof slip.status, { title: string; body: string }> = {
+        approved: { title: 'Slip approved! 🎉', body: `R${Number(slip.reward_amount).toFixed(2)} reward earned.` },
+        rejected: { title: 'Slip rejected', body: slip.rejected_reason ?? 'This slip could not be accepted.' },
+        pending: { title: 'Slip submitted', body: 'Your till slip is pending review.' },
+      };
+      const { title, body } = outcomeCopy[slip.status];
+      Alert.alert(title, body, [{ text: 'OK', onPress: () => router.back() }]);
     } catch (err) {
       Alert.alert('Could not submit', err instanceof Error ? err.message : 'Please try again.');
     } finally {

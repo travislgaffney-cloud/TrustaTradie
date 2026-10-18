@@ -26,7 +26,9 @@ export type NotificationType =
   | 'new_message'
   | 'rating_received'
   | 'site_visit_requested'
-  | 'site_visit_completed';
+  | 'site_visit_completed'
+  | 'reward_slip_approved'
+  | 'reward_slip_rejected';
 
 export type RewardSlipStatus = 'pending' | 'approved' | 'rejected';
 
