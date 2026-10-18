@@ -22,9 +22,19 @@ enable_signup = true
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = false
+enable_confirmations = true
 
 [auth.external.google]
 enabled = true
 client_id = "env(GOOGLE_CLIENT_ID)"
 secret = "env(GOOGLE_CLIENT_SECRET)"
+
+[auth.external.apple]
+enabled = true
+client_id = "com.trustatradie.app"
+secret = "env(APPLE_CLIENT_SECRET)"
+
+[auth.external.facebook]
+enabled = true
+client_id = "env(FACEBOOK_CLIENT_ID)"
+secret = "env(FACEBOOK_CLIENT_SECRET)"
