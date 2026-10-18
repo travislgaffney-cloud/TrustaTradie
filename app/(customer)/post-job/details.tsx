@@ -3,8 +3,6 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -15,6 +13,7 @@ import {
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { KeyboardAvoidingView } from '@/components/ui/keyboard-avoiding-view';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { Brand, Colors } from '@/constants/theme';
 import { TRADE_CATEGORIES, type TradeCategory } from '@/constants/trade-categories';
@@ -40,6 +39,7 @@ export let jobDraft: {
   addressText?: string;
   suburb?: string;
   province?: string;
+  town?: string;
 } = {};
 
 export default function PostJobDetailsScreen() {
@@ -70,7 +70,7 @@ export default function PostJobDetailsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Pressable onPress={() => router.back()} style={styles.back}>
           <Text style={[styles.backText, { color: colors.tint }]}>← Back</Text>

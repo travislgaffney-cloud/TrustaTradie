@@ -2,7 +2,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Image, Pressable, SafeAreaView, ScrollView,
+  Image, Pressable, SafeAreaView, ScrollView,
   StyleSheet, Text, View,
 } from 'react-native';
 import { Avatar } from '@/components/ui/avatar';
@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { acceptQuote } from '@/hooks/use-quotes';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { supabase } from '@/lib/supabase';
 import type { Quote } from '@/types/database';
 
@@ -24,9 +24,8 @@ export default function QuoteDetailScreen() {
   const colors = Colors[scheme];
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
-  const [accepting, setAccepting] = useState(false);
 
-  useEffect(() => {
+  function load() {
     supabase
       .from('quotes')
       .select('*, tradie:profiles!quotes_tradie_id_fkey(*, tradie_profiles(*))')
@@ -39,31 +38,13 @@ export default function QuoteDetailScreen() {
         setQuote(q ?? null);
         setLoading(false);
       });
-  }, [quoteId]);
+  }
+
+  useEffect(load, [quoteId]);
+  useRefreshOnFocus(load);
 
   function handleAccept() {
-    Alert.alert(
-      'Accept Quote',
-      `Accept this quote for R${Number(quote!.amount).toLocaleString()}? This cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Accept', style: 'default', onPress: async () => {
-            setAccepting(true);
-            try {
-              await acceptQuote(quoteId, jobId);
-              setQuote((q) => q ? { ...q, status: 'accepted' } : q);
-              Alert.alert('Quote Accepted!', 'The tradie has been notified and will be in touch soon.');
-            } catch (e: any) {
-              console.error('[acceptQuote] error:', e?.message, e);
-              Alert.alert('Error', 'Could not accept the quote. Please try again.');
-            } finally {
-              setAccepting(false);
-            }
-          },
-        },
-      ]
-    );
+    router.push(`/(customer)/jobs/${jobId}/accept-quote?quoteId=${quoteId}` as never);
   }
 
   if (loading) return <LoadingSpinner full />;
@@ -193,15 +174,8 @@ export default function QuoteDetailScreen() {
 
         {/* Accept CTA */}
         {quote.status === 'pending' && (
-          <Pressable
-            style={[styles.acceptBtn, accepting && { opacity: 0.6 }]}
-            onPress={handleAccept}
-            disabled={accepting}
-          >
-            {accepting
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.acceptText}>Accept this quote →</Text>
-            }
+          <Pressable style={styles.acceptBtn} onPress={handleAccept}>
+            <Text style={styles.acceptText}>Accept this quote →</Text>
           </Pressable>
         )}
 

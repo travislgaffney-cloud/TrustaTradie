@@ -1,6 +1,8 @@
-import { router } from 'expo-router';
-import React, { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useRef, useState } from 'react';
 import { Alert, Pressable, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { JobCard } from '@/components/jobs/job-card';
 import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -9,16 +11,48 @@ import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { deleteJob, useMyJobs } from '@/hooks/use-jobs';
 import { useAuthStore } from '@/store/auth-store';
-import type { JobStatus } from '@/types/database';
+import type { Job, JobStatus } from '@/types/database';
 
 type Filter = 'active' | 'completed' | 'all';
+
+function SwipeableJobCard({ job, onDelete }: { job: Job; onDelete: () => void }) {
+  const swipeableRef = useRef<SwipeableMethods>(null);
+
+  function renderRightActions() {
+    return (
+      <Pressable
+        style={styles.deleteAction}
+        onPress={() => {
+          swipeableRef.current?.close();
+          onDelete();
+        }}
+      >
+        <Ionicons name="trash-outline" size={22} color="#fff" />
+        <Text style={styles.deleteLabel}>Delete</Text>
+      </Pressable>
+    );
+  }
+
+  return (
+    <ReanimatedSwipeable
+      ref={swipeableRef}
+      friction={2}
+      rightThreshold={72}
+      renderRightActions={renderRightActions}
+    >
+      <JobCard job={job} mode="customer" compact />
+    </ReanimatedSwipeable>
+  );
+}
 
 export default function CustomerJobsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { profile } = useAuthStore();
   const { jobs, loading, refresh } = useMyJobs();
-  const [filter, setFilter] = useState<Filter>('active');
+  const { filter: filterParam } = useLocalSearchParams<{ filter?: string }>();
+  const initialFilter: Filter = filterParam === 'completed' || filterParam === 'all' ? filterParam : 'active';
+  const [filter, setFilter] = useState<Filter>(initialFilter);
 
   const ACTIVE_STATUSES: JobStatus[] = ['open', 'quotes_received', 'accepted', 'in_progress', 'pending_completion'];
 
@@ -28,13 +62,26 @@ export default function CustomerJobsScreen() {
     return true;
   });
 
-  async function handleDeleteJob(jobId: string) {
-    try {
-      await deleteJob(jobId);
-      refresh();
-    } catch (err: any) {
-      Alert.alert('Error', err.message ?? 'Failed to delete job');
-    }
+  function handleDeleteJob(job: Job) {
+    Alert.alert(
+      'Delete Job',
+      `Are you sure you want to delete "${job.title}"? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteJob(job.id);
+              refresh();
+            } catch (err: any) {
+              Alert.alert('Error', err.message ?? 'Failed to delete job');
+            }
+          },
+        },
+      ]
+    );
   }
 
   return (
@@ -78,7 +125,7 @@ export default function CustomerJobsScreen() {
           />
         ) : (
           filtered.map((job) => (
-            <JobCard key={job.id} job={job} mode="customer" onDelete={() => handleDeleteJob(job.id)} />
+            <SwipeableJobCard key={job.id} job={job} onDelete={() => handleDeleteJob(job)} />
           ))
         )}
       </ScrollView>
@@ -107,4 +154,13 @@ const styles = StyleSheet.create({
   tab: { flex: 1, alignItems: 'center', paddingVertical: 12 },
   tabText: { fontSize: 14, fontWeight: '500' },
   scroll: { padding: 16, gap: 12, flexGrow: 1 },
+  deleteAction: {
+    backgroundColor: '#ef4444',
+    width: 80,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  deleteLabel: { color: '#fff', fontSize: 12, fontWeight: '700' },
 });

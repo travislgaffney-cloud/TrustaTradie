@@ -22,11 +22,11 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useJob } from '@/hooks/use-jobs';
 import { useAuthStore } from '@/store/auth-store';
 import { useMyQuotes } from '@/hooks/use-quotes';
-import { useSiteVisit, requestSiteVisit, markSiteVisitComplete } from '@/hooks/use-site-visits';
+import { useSiteVisit, requestSiteVisit, respondToSiteVisit, markSiteVisitComplete } from '@/hooks/use-site-visits';
 import { startJobConversation } from '@/hooks/use-messages';
 
 export default function TradieJobDetailScreen() {
-  const { jobId } = useLocalSearchParams<{ jobId: string }>();
+  const { jobId, from } = useLocalSearchParams<{ jobId: string; from?: string }>();
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { job, loading } = useJob(jobId);
@@ -35,13 +35,15 @@ export default function TradieJobDetailScreen() {
   const { visit, loading: visitLoading, refresh: refreshVisit } = useSiteVisit(jobId);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showSuggestPicker, setShowSuggestPicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const alreadyQuoted = quotes.some((q) => q.job_id === jobId && q.status !== 'withdrawn');
 
   const visitStatus = visit?.status;
   const canRequestVisit = !visit;
-  const visitProposed = visitStatus === 'proposed';
+  const visitAwaitingCustomer = visitStatus === 'proposed' && visit?.proposed_by === 'tradie';
+  const visitAwaitingTradie = visitStatus === 'proposed' && visit?.proposed_by === 'customer';
   const visitConfirmed = visitStatus === 'confirmed';
   const visitCompleted = visitStatus === 'completed';
   const canQuote = visitCompleted;
@@ -62,6 +64,38 @@ export default function TradieJobDetailScreen() {
     } finally {
       setSubmitting(false);
       setShowDatePicker(false);
+    }
+  }
+
+  async function handleConfirmVisit() {
+    if (!visit) return;
+    setSubmitting(true);
+    try {
+      await respondToSiteVisit({ visitId: visit.id, action: 'confirm', respondedBy: 'tradie' });
+      refreshVisit();
+    } catch {
+      Alert.alert('Error', 'Could not confirm the visit.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleSuggestDifferentTime(date: Date) {
+    if (!visit) return;
+    setSubmitting(true);
+    try {
+      await respondToSiteVisit({
+        visitId: visit.id,
+        action: 'suggest',
+        respondedBy: 'tradie',
+        newDatetime: date.toISOString(),
+      });
+      refreshVisit();
+    } catch {
+      Alert.alert('Error', 'Could not suggest a new time.');
+    } finally {
+      setSubmitting(false);
+      setShowSuggestPicker(false);
     }
   }
 
@@ -116,7 +150,7 @@ export default function TradieJobDetailScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { borderBottomColor: colors.border }]}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => from === 'notifications' ? router.navigate('/(tradie)/notifications' as never) : router.back()}>
           <Text style={[styles.back, { color: colors.tint }]}>← Back</Text>
         </Pressable>
         <Text style={[styles.navTitle, { color: colors.text }]}>Job Details</Text>
@@ -159,7 +193,7 @@ export default function TradieJobDetailScreen() {
                 </Text>
                 <View style={styles.visitInfo}>
                   <Text style={[styles.visitTitle, { color: colors.text }]}>
-                    {visitCompleted ? 'Site Visit Completed' : visitConfirmed ? 'Visit Confirmed' : 'Visit Requested'}
+                    {visitCompleted ? 'Site Visit Completed' : visitConfirmed ? 'Visit Confirmed' : visitAwaitingTradie ? 'Customer Suggested a New Time' : 'Visit Requested'}
                   </Text>
                   <Text style={[styles.visitDate, { color: colors.textSecondary }]}>
                     {proposedDate}
@@ -185,13 +219,31 @@ export default function TradieJobDetailScreen() {
             </Button>
           )}
 
-          {visitProposed && (
+          {visitAwaitingCustomer && (
             <View style={styles.actionGroup}>
               <View style={[styles.pendingBanner, { backgroundColor: '#fef9c3' }]}>
                 <Text style={styles.pendingText}>
                   ⏳ Waiting for customer to confirm your viewing appointment
                 </Text>
               </View>
+              <Pressable style={[styles.chatBtn, { backgroundColor: Brand.secondary }]} onPress={handleOpenChat}>
+                <Text style={styles.chatBtnText}>💬 Chat with Customer</Text>
+              </Pressable>
+            </View>
+          )}
+
+          {visitAwaitingTradie && (
+            <View style={styles.actionGroup}>
+              <Button size="lg" onPress={handleConfirmVisit} loading={submitting}>
+                ✓ Confirm This Time
+              </Button>
+              <Pressable
+                style={[styles.suggestBtn, { borderColor: Brand.secondary }]}
+                onPress={() => setShowSuggestPicker(true)}
+                disabled={submitting}
+              >
+                <Text style={[styles.suggestBtnText, { color: Brand.secondary }]}>Suggest a Different Time</Text>
+              </Pressable>
               <Pressable style={[styles.chatBtn, { backgroundColor: Brand.secondary }]} onPress={handleOpenChat}>
                 <Text style={styles.chatBtnText}>💬 Chat with Customer</Text>
               </Pressable>
@@ -227,6 +279,11 @@ export default function TradieJobDetailScreen() {
         visible={showDatePicker}
         onClose={() => setShowDatePicker(false)}
         onConfirm={handleRequestVisit}
+      />
+      <DateTimePickerModal
+        visible={showSuggestPicker}
+        onClose={() => setShowSuggestPicker(false)}
+        onConfirm={handleSuggestDifferentTime}
       />
     </SafeAreaView>
   );
@@ -268,6 +325,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   chatBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  suggestBtn: {
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  suggestBtnText: { fontSize: 14, fontWeight: '600' },
   quotedBanner: { borderRadius: 10, padding: 14 },
   quotedText: { color: '#166534', fontSize: 14, fontWeight: '600' },
 });

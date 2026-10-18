@@ -6,31 +6,24 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { TRADE_CATEGORIES, type TradeCategory } from '@/constants/trade-categories';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useLocation } from '@/hooks/use-location';
-import { useNearbyJobs } from '@/hooks/use-jobs';
+import { useTownJobs } from '@/hooks/use-jobs';
 import { useAuthStore } from '@/store/auth-store';
 
 export default function TradieJobsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { tradieProfile } = useAuthStore();
-  const { coords, loading: locLoading } = useLocation();
-  const radius = tradieProfile?.service_radius_km ?? 50;
+  const serviceTowns = tradieProfile?.service_towns ?? [];
   const [selectedCategory, setSelectedCategory] = useState<TradeCategory | undefined>(undefined);
 
-  const { jobs, quotedJobIds, loading, refresh } = useNearbyJobs(
-    coords?.latitude ?? -26.2041,
-    coords?.longitude ?? 28.0473,
-    radius,
-    selectedCategory
-  );
+  const { jobs, quotedJobIds, loading, refresh } = useTownJobs(serviceTowns, selectedCategory);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Text style={[styles.title, { color: colors.text }]}>Browse Jobs</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Within {radius} km · {jobs.length} open
+          {serviceTowns.length > 0 ? `In ${serviceTowns.join(', ')} · ${jobs.length} open` : 'Add towns you service in your profile to see jobs'}
         </Text>
       </View>
 
@@ -70,15 +63,15 @@ export default function TradieJobsScreen() {
 
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={loading || locLoading} onRefresh={refresh} />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
       >
-        {loading || locLoading ? (
+        {loading ? (
           <LoadingSpinner full />
         ) : jobs.length === 0 ? (
-          <EmptyState icon="🔍" title="No jobs nearby" description={selectedCategory ? `No open ${TRADE_CATEGORIES.find(c => c.value === selectedCategory)?.label ?? ''} jobs in your area right now.` : 'There are no open jobs in your service area right now. Check back soon.'} />
+          <EmptyState icon="🔍" title="No jobs nearby" description={selectedCategory ? `No open ${TRADE_CATEGORIES.find(c => c.value === selectedCategory)?.label ?? ''} jobs in your towns right now.` : 'There are no open jobs in your towns right now. Check back soon.'} />
         ) : (
           jobs.map((job) => (
-            <JobCard key={job.id} job={job} mode="tradie" hasQuoted={quotedJobIds.has(job.id)} />
+            <JobCard key={job.id} job={job} mode="tradie" compact hasQuoted={quotedJobIds.has(job.id)} />
           ))
         )}
       </ScrollView>

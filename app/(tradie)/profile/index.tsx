@@ -18,6 +18,7 @@ import { useTradieDocuments, usePortfolioImages, useTradieRatings } from '@/hook
 import { supabase } from '@/lib/supabase';
 import { uploadFile } from '@/lib/storage';
 import { submitBugReport } from '@/lib/bug-report';
+import { deleteAccount } from '@/lib/account';
 import { useAuthStore } from '@/store/auth-store';
 import type { TradieDocument } from '@/types/database';
 
@@ -33,6 +34,7 @@ export default function TradieProfileScreen() {
   const colors = Colors[scheme];
   const { profile, tradieProfile, setProfile } = useAuthStore();
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const { documents } = useTradieDocuments();
   const { images } = usePortfolioImages();
@@ -65,6 +67,31 @@ export default function TradieProfileScreen() {
     router.replace('/(auth)/welcome');
   }
 
+  function handleDeleteAccount() {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account and personal information (name, photo, phone, documents, portfolio, bank details). This cannot be undone. Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await deleteAccount();
+              await supabase.auth.signOut();
+              router.replace('/(auth)/welcome');
+            } catch {
+              Alert.alert('Error', 'Could not delete your account. Please try again or contact support.');
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  }
+
   if (!profile) return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: Brand.secondary }]} />
@@ -88,7 +115,7 @@ export default function TradieProfileScreen() {
             <Pressable onPress={handleAvatarChange} disabled={uploading} style={styles.avatarWrap}>
               <Avatar uri={profile.avatar_url} name={profile.full_name} size={80} verified={tradieProfile?.is_verified} />
               {uploading
-                ? <ActivityIndicator color="#fff" style={styles.photoLabel} />
+                ? <ActivityIndicator color="#fff" />
                 : <Text style={styles.photoLabel}>Change photo</Text>
               }
             </Pressable>
@@ -114,6 +141,15 @@ export default function TradieProfileScreen() {
             <View style={styles.categories}>
               {categories.map((cat) => cat && (
                 <Badge key={cat.value} label={`${cat.icon} ${cat.label}`} />
+              ))}
+            </View>
+          )}
+
+          {/* Areas covered */}
+          {tradieProfile && tradieProfile.service_towns.length > 0 && (
+            <View style={styles.categories}>
+              {tradieProfile.service_towns.map((town) => (
+                <Badge key={town} label={`📍 ${town}`} />
               ))}
             </View>
           )}
@@ -254,6 +290,12 @@ export default function TradieProfileScreen() {
             <Text style={styles.signOutText}>Sign Out</Text>
           </Pressable>
 
+          <Pressable onPress={handleDeleteAccount} disabled={deleting} style={styles.deleteAccountBtn}>
+            <Text style={styles.deleteAccountText}>
+              {deleting ? 'Deleting account...' : 'Delete Account'}
+            </Text>
+          </Pressable>
+
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -317,4 +359,6 @@ const styles = StyleSheet.create({
   },
   bugBtnText: { fontSize: 15, fontWeight: '600' },
   signOutText: { color: '#ef4444', fontSize: 15, fontWeight: '700' },
+  deleteAccountBtn: { alignItems: 'center', paddingVertical: 10 },
+  deleteAccountText: { color: '#ef4444', fontSize: 13, fontWeight: '600' },
 });

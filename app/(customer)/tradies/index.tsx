@@ -16,16 +16,16 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { TRADE_CATEGORIES, type TradeCategory } from '@/constants/trade-categories';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useLocation } from '@/hooks/use-location';
 import { startDirectConversation } from '@/hooks/use-messages';
-import { useNearbyTradies } from '@/hooks/use-nearby-tradies';
+import { useTradiesByTown } from '@/hooks/use-nearby-tradies';
+import { normalizeTown } from '@/lib/towns';
 import { useAuthStore } from '@/store/auth-store';
 import { RatingStars } from '@/components/tradie/rating-stars';
+import { Input } from '@/components/ui/input';
 
-type SortOption = 'distance' | 'rating' | 'reviews' | 'jobs';
+type SortOption = 'rating' | 'reviews' | 'jobs';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: 'distance', label: '📍 Nearest' },
   { value: 'rating', label: '⭐ Top Rated' },
   { value: 'reviews', label: '💬 Most Reviews' },
   { value: 'jobs', label: '🔨 Most Jobs' },
@@ -35,9 +35,9 @@ export default function TradiesNearMeScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { profile, user } = useAuthStore();
-  const { coords, loading: locationLoading } = useLocation();
+  const [townInput, setTownInput] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<TradeCategory | null>(null);
-  const [sortBy, setSortBy] = useState<SortOption>('distance');
+  const [sortBy, setSortBy] = useState<SortOption>('rating');
   const [startingChat, setStartingChat] = useState<string | null>(null);
 
   async function handleMessage(tradieId: string) {
@@ -51,17 +51,14 @@ export default function TradiesNearMeScreen() {
     }
   }
 
-  const lat = coords?.latitude ?? -26.2041;
-  const lng = coords?.longitude ?? 28.0473;
-
-  const { tradies: rawTradies, loading } = useNearbyTradies(lat, lng, 50, selectedCategory ?? undefined);
+  const town = townInput.trim() ? normalizeTown(townInput) : null;
+  const { tradies: rawTradies, loading, refresh } = useTradiesByTown(town, selectedCategory ?? undefined);
 
   const tradies = [...rawTradies].sort((a, b) => {
     switch (sortBy) {
-      case 'rating': return b.average_rating - a.average_rating;
       case 'reviews': return b.total_reviews - a.total_reviews;
       case 'jobs': return b.completed_jobs - a.completed_jobs;
-      default: return a.distance_km - b.distance_km;
+      default: return b.average_rating - a.average_rating;
     }
   });
 
@@ -71,15 +68,19 @@ export default function TradiesNearMeScreen() {
       <View style={[styles.header, { backgroundColor: Brand.secondary }]}>
         <View style={styles.headerTop}>
           <View style={styles.headerTextWrap}>
-            <Text style={styles.greeting}>Tradies Near Me</Text>
+            <Text style={styles.greeting}>Find Tradies</Text>
             <Text style={styles.headerSubtitle}>
-              {locationLoading ? 'Detecting your location…' : `Within 50 km of you`}
+              {town ? `Servicing ${town}` : 'Enter a town to filter, or browse all tradies'}
             </Text>
           </View>
           <Pressable onPress={() => router.push('/(customer)/profile')}>
             <Avatar uri={profile?.avatar_url} name={profile?.full_name} size={36} color="#38BDF8" />
           </Pressable>
         </View>
+      </View>
+
+      <View style={styles.townFilter}>
+        <Input value={townInput} onChangeText={setTownInput} placeholder="Filter by town, e.g. Sandton" />
       </View>
 
       {/* Category filter */}
@@ -140,7 +141,7 @@ export default function TradiesNearMeScreen() {
       {/* Tradie list */}
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={() => {}} />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
       >
         {loading ? (
           <LoadingSpinner full />
@@ -148,7 +149,7 @@ export default function TradiesNearMeScreen() {
           <EmptyState
             icon="🔍"
             title="No tradies found"
-            description="No tradies found in your area yet. Try expanding your search or check back later."
+            description={town ? `No tradies service ${town} yet. Try a different town or browse all.` : 'No tradies found yet. Check back later.'}
           />
         ) : (
           tradies.map((tradie) => (
@@ -165,10 +166,9 @@ export default function TradiesNearMeScreen() {
                     {tradie.is_verified && <Badge label="✓" variant="success" />}
                   </View>
                   <RatingStars rating={tradie.average_rating} showNumber size={13} />
-                  <Text style={[styles.meta, { color: colors.textSecondary }]}>
-                    {tradie.distance_km.toFixed(1)} km away
-                    {tradie.suburb ? ` · ${tradie.suburb}` : ''}
-                  </Text>
+                  {tradie.suburb && (
+                    <Text style={[styles.meta, { color: colors.textSecondary }]}>{tradie.suburb}</Text>
+                  )}
                 </View>
               </View>
 
@@ -222,6 +222,7 @@ const styles = StyleSheet.create({
   headerTextWrap: { flex: 1, gap: 4 },
   greeting: { fontSize: 24, fontWeight: '800', color: '#fff' },
   headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.85)' },
+  townFilter: { paddingHorizontal: 16, paddingTop: 12 },
   filters: {
     paddingHorizontal: 12,
     paddingVertical: 10,

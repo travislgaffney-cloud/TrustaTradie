@@ -5,13 +5,15 @@ import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { z } from 'zod';
+import { KeyboardAvoidingView } from '@/components/ui/keyboard-avoiding-view';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PLATFORM_FEE } from '@/constants/config';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { getCommissionPct } from '@/hooks/use-platform-settings';
 import { useAuthStore } from '@/store/auth-store';
 import { submitQuote } from '@/hooks/use-quotes';
 import { supabase } from '@/lib/supabase';
@@ -40,6 +42,11 @@ export default function SubmitQuoteScreen() {
   const [attachment, setAttachment] = useState<AttachedFile | null>(null);
   const [uploading, setUploading] = useState(false);
   const [existingQuoteNumber, setExistingQuoteNumber] = useState<string | null>(null);
+  const [commissionPct, setCommissionPct] = useState(PLATFORM_FEE);
+
+  useEffect(() => {
+    getCommissionPct().then(setCommissionPct);
+  }, []);
 
   const { control, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -67,7 +74,7 @@ export default function SubmitQuoteScreen() {
   }, [jobId, user]);
 
   const amount = Number(watch('amount') ?? 0);
-  const tradiePayout = amount * (1 - PLATFORM_FEE);
+  const tradiePayout = amount * (1 - commissionPct);
 
   async function pickFromGallery() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -150,7 +157,7 @@ export default function SubmitQuoteScreen() {
         <View style={{ width: 60 }} />
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.form}>
           <Controller control={control} name="amount" render={({ field }) => (
@@ -175,8 +182,8 @@ export default function SubmitQuoteScreen() {
             <View style={[styles.breakdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Text style={[styles.bLabel, { color: colors.textSecondary }]}>You quoted:</Text>
               <Text style={[styles.bValue, { color: colors.text }]}>R{amount.toLocaleString()}</Text>
-              <Text style={[styles.bLabel, { color: colors.textSecondary }]}>Trust-a-Tradie fee (5%):</Text>
-              <Text style={[styles.bValue, { color: colors.error }]}>− R{(amount * PLATFORM_FEE).toFixed(2)}</Text>
+              <Text style={[styles.bLabel, { color: colors.textSecondary }]}>Trust-a-Tradie fee ({(commissionPct * 100).toFixed(0)}%):</Text>
+              <Text style={[styles.bValue, { color: colors.error }]}>− R{(amount * commissionPct).toFixed(2)}</Text>
               <Text style={[styles.bLabel, { color: colors.text, fontWeight: '700' }]}>You receive:</Text>
               <Text style={[styles.bValue, { color: colors.text, fontWeight: '700', fontSize: 18 }]}>R{tradiePayout.toFixed(2)}</Text>
             </View>

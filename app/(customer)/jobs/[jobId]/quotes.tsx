@@ -10,7 +10,7 @@ import { useJob } from '@/hooks/use-jobs';
 import { useJobQuotes } from '@/hooks/use-quotes';
 
 export default function CustomerQuotesScreen() {
-  const { jobId } = useLocalSearchParams<{ jobId: string }>();
+  const { jobId, from } = useLocalSearchParams<{ jobId: string; from?: string }>();
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { job } = useJob(jobId);
@@ -23,7 +23,7 @@ export default function CustomerQuotesScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { borderBottomColor: colors.border }]}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => from === 'notifications' ? router.navigate('/(customer)/notifications' as never) : router.back()}>
           <Text style={[styles.back, { color: colors.tint }]}>← Back</Text>
         </Pressable>
         <Text style={[styles.navTitle, { color: colors.text }]}>

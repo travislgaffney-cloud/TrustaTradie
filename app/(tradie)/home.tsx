@@ -13,8 +13,8 @@ import { Avatar } from '@/components/ui/avatar';
 import { Brand, Colors } from '@/constants/theme';
 import { TRADE_CATEGORIES } from '@/constants/trade-categories';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useLocation } from '@/hooks/use-location';
-import { useNearbyJobs } from '@/hooks/use-jobs';
+import { useTownJobs, useUnquotedLeads } from '@/hooks/use-jobs';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
 import type { Job } from '@/types/database';
@@ -80,26 +80,22 @@ export default function TradieHomeScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { profile, tradieProfile, user } = useAuthStore();
-  const { coords } = useLocation();
-  const radius = tradieProfile?.service_radius_km ?? 50;
+  const serviceTowns = tradieProfile?.service_towns ?? [];
 
-  const { jobs: nearbyJobs, loading: nearbyLoading, refresh: refreshNearby } = useNearbyJobs(
-    coords?.latitude ?? -26.2041,
-    coords?.longitude ?? 28.0473,
-    radius
-  );
+  const { jobs: nearbyJobs, loading: nearbyLoading, refresh: refreshNearby } = useTownJobs(serviceTowns);
+  const { jobs: leads, refresh: refreshLeads } = useUnquotedLeads();
 
   const [activeJobs, setActiveJobs] = useState<Job[]>([]);
   const [activeLoading, setActiveLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [pendingQuotes, setPendingQuotes] = useState(0);
 
   useEffect(() => {
-    if (user) {
-      fetchActiveJobs();
-      fetchPendingQuotes();
-    }
+    if (user) fetchActiveJobs();
   }, [user]);
+
+  useRefreshOnFocus(() => {
+    if (user) fetchActiveJobs();
+  });
 
   async function fetchActiveJobs() {
     setActiveLoading(true);
@@ -111,24 +107,16 @@ export default function TradieHomeScreen() {
 
     const jobs = (data ?? [])
       .map((q: any) => q.job)
-      .filter((j: any) => j && ['accepted', 'in_progress'].includes(j.status));
+      .filter((j: any) => j && ['accepted', 'in_progress'].includes(j.status))
+      .sort((a: Job, b: Job) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     setActiveJobs(jobs as Job[]);
     setActiveLoading(false);
   }
 
-  async function fetchPendingQuotes() {
-    const { count } = await supabase
-      .from('quotes')
-      .select('*', { count: 'exact', head: true })
-      .eq('tradie_id', user!.id)
-      .eq('status', 'pending');
-    setPendingQuotes(count ?? 0);
-  }
-
   async function onRefresh() {
     setRefreshing(true);
-    await Promise.all([fetchActiveJobs(), fetchPendingQuotes(), refreshNearby()]);
+    await Promise.all([fetchActiveJobs(), refreshLeads(), refreshNearby()]);
     setRefreshing(false);
   }
 
@@ -157,18 +145,27 @@ export default function TradieHomeScreen() {
       >
         {/* Quick Stats */}
         <View style={styles.statsRow}>
-          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: Brand.primary }]}>
+          <Pressable
+            style={[styles.statCard, { backgroundColor: colors.surface, borderColor: Brand.primary }]}
+            onPress={() => router.push('/(tradie)/my-quotes')}
+          >
             <Text style={[styles.statNum, { color: Brand.primary }]}>{activeJobs.length}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Active Jobs</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          </Pressable>
+          <Pressable
+            style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => router.push('/(tradie)/jobs')}
+          >
             <Text style={[styles.statNum, { color: Brand.secondary }]}>{nearbyJobs.length}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Nearby Leads</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statNum, { color: '#854d0e' }]}>{pendingQuotes}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Leads in My Towns</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => router.push('/(tradie)/leads')}
+          >
+            <Text style={[styles.statNum, { color: '#854d0e' }]}>{leads.length}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Pending Quotes</Text>
-          </View>
+          </Pressable>
         </View>
 
         {/* Dashboard Actions */}

@@ -1,9 +1,6 @@
-import * as Location from 'expo-location';
 import { router } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -11,73 +8,44 @@ import {
   Text,
   View,
 } from 'react-native';
-import MapView, { Marker, type Region } from 'react-native-maps';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { KeyboardAvoidingView } from '@/components/ui/keyboard-avoiding-view';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { normalizeTown } from '@/lib/towns';
 import { jobDraft } from './details';
 
+// Map/GPS-based picking is parked for now (hooks/use-location.ts and the
+// react-native-maps usage that used to live here are left intact elsewhere
+// for a later re-enable) — this is pure manual entry. `town` is the field
+// job-matching actually filters on, so it's required and kept distinct from
+// the free-text `suburb` shown for display.
 export default function PostJobLocationScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
-  const mapRef = useRef<MapView>(null);
-  const [region, setRegion] = useState<Region>({
-    latitude: -26.2041,
-    longitude: 28.0473,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
-  });
-  const [markerCoords, setMarkerCoords] = useState({ lat: -26.2041, lng: 28.0473 });
-  const [address, setAddress] = useState('');
-  const [suburb, setSuburb] = useState('');
-  const [province, setProvince] = useState('');
-
-  useEffect(() => {
-    Location.requestForegroundPermissionsAsync().then(({ status }) => {
-      if (status !== 'granted') return;
-      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).then((loc) => {
-        const r = {
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        };
-        setRegion(r);
-        setMarkerCoords({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-        reverseGeocode(loc.coords.latitude, loc.coords.longitude);
-      });
-    });
-  }, []);
-
-  async function reverseGeocode(lat: number, lng: number) {
-    const [geo] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
-    if (geo) {
-      setSuburb(geo.district ?? geo.subregion ?? '');
-      setProvince(geo.region ?? '');
-      setAddress([geo.streetNumber, geo.street, geo.district, geo.region].filter(Boolean).join(', '));
-    }
-  }
-
-  function handleMapPress(e: { nativeEvent: { coordinate: { latitude: number; longitude: number } } }) {
-    const { latitude, longitude } = e.nativeEvent.coordinate;
-    setMarkerCoords({ lat: latitude, lng: longitude });
-    reverseGeocode(latitude, longitude);
-  }
+  const [address, setAddress] = useState(jobDraft.addressText ?? '');
+  const [town, setTown] = useState(jobDraft.town ?? '');
+  const [suburb, setSuburb] = useState(jobDraft.suburb ?? '');
+  const [province, setProvince] = useState(jobDraft.province ?? '');
+  const [error, setError] = useState<string | null>(null);
 
   function handleContinue() {
-    jobDraft.locationLat = markerCoords.lat;
-    jobDraft.locationLng = markerCoords.lng;
-    jobDraft.addressText = address;
-    jobDraft.suburb = suburb;
-    jobDraft.province = province;
+    if (!address.trim() || !town.trim()) {
+      setError('Address and town are required so tradies in your area can find this job.');
+      return;
+    }
+    jobDraft.addressText = address.trim();
+    jobDraft.town = normalizeTown(town);
+    jobDraft.suburb = suburb.trim();
+    jobDraft.province = province.trim();
     router.push('/(customer)/post-job/review' as never);
   }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Pressable onPress={() => router.back()} style={styles.back}>
           <Text style={[styles.backText, { color: colors.tint }]}>← Back</Text>
@@ -87,34 +55,27 @@ export default function PostJobLocationScreen() {
 
         <Text style={[styles.title, { color: colors.text }]}>Job location</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Tap the map to set the exact job site, or enter the address below.
+          Enter the job site address. The town is what we use to find tradies who service your area.
         </Text>
 
-        <MapView
-          ref={mapRef}
-          style={styles.map}
-          region={region}
-          onRegionChangeComplete={setRegion}
-          onPress={handleMapPress}
-          showsUserLocation
-        >
-          <Marker
-            coordinate={{ latitude: markerCoords.lat, longitude: markerCoords.lng }}
-            pinColor="#F97316"
-          />
-        </MapView>
-
         <View style={styles.form}>
-          <Input label="Address" value={address} onChangeText={setAddress} placeholder="123 Main Rd, Sandton" />
+          <Input label="Address" value={address} onChangeText={setAddress} placeholder="123 Main Rd" />
+          <Input label="Town" value={town} onChangeText={setTown} placeholder="e.g. Sandton" />
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Input label="Suburb" value={suburb} onChangeText={setSuburb} placeholder="Sandton" />
+              <Input label="Suburb (optional)" value={suburb} onChangeText={setSuburb} placeholder="Sandton" />
             </View>
             <View style={{ flex: 1 }}>
-              <Input label="Province" value={province} onChangeText={setProvince} placeholder="Gauteng" />
+              <Input label="Province (optional)" value={province} onChangeText={setProvince} placeholder="Gauteng" />
             </View>
           </View>
         </View>
+
+        {error && (
+          <View style={[styles.errorBox, { backgroundColor: '#fee2e2' }]}>
+            <Text style={{ color: '#991b1b' }}>{error}</Text>
+          </View>
+        )}
 
         <Button size="lg" onPress={handleContinue}>Continue →</Button>
       </ScrollView>
@@ -130,7 +91,7 @@ const styles = StyleSheet.create({
   backText: { fontSize: 16 },
   title: { fontSize: 24, fontWeight: '800' },
   subtitle: { fontSize: 14, lineHeight: 20 },
-  map: { height: 220, borderRadius: 14, overflow: 'hidden' },
   form: { gap: 12 },
   row: { flexDirection: 'row', gap: 12 },
+  errorBox: { borderRadius: 8, padding: 12 },
 });

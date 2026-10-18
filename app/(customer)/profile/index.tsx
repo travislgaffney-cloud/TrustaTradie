@@ -10,6 +10,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { supabase } from '@/lib/supabase';
 import { uploadFile } from '@/lib/storage';
 import { submitBugReport } from '@/lib/bug-report';
+import { deleteAccount } from '@/lib/account';
 import { useAuthStore } from '@/store/auth-store';
 
 export default function CustomerProfileScreen() {
@@ -17,6 +18,7 @@ export default function CustomerProfileScreen() {
   const colors = Colors[scheme];
   const { profile, setProfile } = useAuthStore();
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleAvatarChange() {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -38,6 +40,31 @@ export default function CustomerProfileScreen() {
   async function handleSignOut() {
     await supabase.auth.signOut();
     router.replace('/(auth)/welcome');
+  }
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account and personal information (name, photo, phone, address). This cannot be undone. Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await deleteAccount();
+              await supabase.auth.signOut();
+              router.replace('/(auth)/welcome');
+            } catch {
+              Alert.alert('Error', 'Could not delete your account. Please try again or contact support.');
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
   }
 
   if (!profile) return null;
@@ -104,6 +131,12 @@ export default function CustomerProfileScreen() {
         </Pressable>
 
         <Button variant="danger" onPress={handleSignOut}>Sign Out</Button>
+
+        <Pressable onPress={handleDeleteAccount} disabled={deleting} style={styles.deleteAccountBtn}>
+          <Text style={styles.deleteAccountText}>
+            {deleting ? 'Deleting account...' : 'Delete Account'}
+          </Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -129,4 +162,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bugBtnText: { fontSize: 15, fontWeight: '600' },
+  deleteAccountBtn: { alignItems: 'center', paddingVertical: 10 },
+  deleteAccountText: { color: '#ef4444', fontSize: 13, fontWeight: '600' },
 });

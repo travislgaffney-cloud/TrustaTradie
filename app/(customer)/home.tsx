@@ -65,22 +65,31 @@ export default function CustomerHomeScreen() {
 
         {/* Quick stats */}
         <View style={styles.statsRow}>
-          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Pressable
+            style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => router.push('/(customer)/jobs?filter=active')}
+          >
             <Text style={[styles.statNum, { color: colors.text }]}>{activeJobs.length}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Active Jobs</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          </Pressable>
+          <Pressable
+            style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => router.push('/(customer)/jobs?filter=completed')}
+          >
             <Text style={[styles.statNum, { color: colors.text }]}>
               {jobs.filter((j) => j.status === 'completed').length}
             </Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Completed</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          </Pressable>
+          <Pressable
+            style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => router.push('/(customer)/jobs?filter=active')}
+          >
             <Text style={[styles.statNum, { color: colors.text }]}>
               {jobs.filter((j) => j.status === 'quotes_received').length}
             </Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>New Quotes</Text>
-          </View>
+          </Pressable>
         </View>
 
         {/* Active jobs */}
@@ -95,7 +104,7 @@ export default function CustomerHomeScreen() {
               description="Post your first job to receive quotes from local tradies"
             />
           ) : (
-            activeJobs.map((job) => <JobCard key={job.id} job={job} mode="customer" />)
+            activeJobs.map((job) => <JobCard key={job.id} job={job} mode="customer" compact />)
           )}
         </View>
       </ScrollView>

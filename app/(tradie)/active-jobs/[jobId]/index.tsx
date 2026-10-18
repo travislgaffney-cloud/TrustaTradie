@@ -1,16 +1,15 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { JobStatusBadge } from '@/components/jobs/job-status-badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useJob } from '@/hooks/use-jobs';
+import { completeJob, useJob } from '@/hooks/use-jobs';
 import { startJobConversation } from '@/hooks/use-messages';
 import { useAuthStore } from '@/store/auth-store';
-import { supabase } from '@/lib/supabase';
 
 export default function TradieActiveJobScreen() {
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
@@ -33,10 +32,16 @@ export default function TradieActiveJobScreen() {
   }
 
   async function handleRequestCompletion() {
+    if (!user) return;
     setRequesting(true);
-    await supabase.from('jobs').update({ status: 'pending_completion' }).eq('id', jobId);
-    await refresh();
-    setRequesting(false);
+    try {
+      await completeJob(jobId, user.id);
+      await refresh();
+    } catch (err) {
+      Alert.alert('Could not complete job', err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setRequesting(false);
+    }
   }
 
   if (loading) return <LoadingSpinner full />;

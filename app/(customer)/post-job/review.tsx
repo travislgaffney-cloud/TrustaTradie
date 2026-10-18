@@ -32,8 +32,7 @@ export default function PostJobReviewScreen() {
         addressText: draft.addressText ?? '',
         suburb: draft.suburb ?? '',
         province: draft.province ?? '',
-        lat: draft.locationLat ?? -26.2041,
-        lng: draft.locationLng ?? 28.0473,
+        town: draft.town ?? '',
         budgetMin: draft.budgetMin,
         budgetMax: draft.budgetMax,
       });
@@ -93,7 +92,7 @@ export default function PostJobReviewScreen() {
           )}
 
           <Text style={[styles.location, { color: colors.textSecondary }]}>
-            📍 {draft.addressText || 'Location not set'}
+            📍 {draft.addressText || 'Location not set'}{draft.town ? ` · ${draft.town}` : ''}
           </Text>
         </Card>
 
