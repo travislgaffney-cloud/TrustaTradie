@@ -10,7 +10,9 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith("/auth/callback") ||
     pathname.startsWith("/privacy") ||
     pathname.startsWith("/terms") ||
-    pathname.startsWith("/payment")
+    pathname.startsWith("/payment") ||
+    pathname.startsWith("/reports/confirm") ||
+    pathname.startsWith("/api/reports/confirm")
   ) {
     return NextResponse.next();
   }

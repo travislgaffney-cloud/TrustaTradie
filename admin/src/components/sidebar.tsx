@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/users", label: "Users", icon: "👥" },
   { href: "/disputes", label: "Disputes", icon: "⚖️" },
   { href: "/rewards/review", label: "Reward Review Queue", icon: "🧾" },
+  { href: "/rewards/reports", label: "Reward Reports", icon: "📊" },
   { href: "/rewards/suppliers", label: "Supplier Rewards", icon: "🎁" },
   { href: "/bug-reports", label: "Bug Reports", icon: "🐛" },
   { href: "/reports", label: "Reports", icon: "🧾" },
