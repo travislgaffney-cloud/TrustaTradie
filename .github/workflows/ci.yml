@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  app:
+    name: App (typecheck, lint, test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - name: Lint (non-blocking — see CONTRIBUTING notes on react-hooks/set-state-in-effect)
+        run: npm run lint
+        continue-on-error: true
+      - run: npm test -- --ci
+
+  admin:
+    name: Admin (typecheck, lint, test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - name: Lint (non-blocking — pre-existing no-explicit-any backlog)
+        run: npm run lint
+        continue-on-error: true
+      - run: npm test -- --ci
+
+  edge-functions:
+    name: Edge functions (typecheck, test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Typecheck every edge function
+        run: |
+          for f in supabase/functions/*/index.ts; do
+            echo "Checking $f"
+            deno check "$f"
+          done
+      - name: Run Deno tests
+        run: deno test supabase/functions
