@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react';
 import { Alert, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { JobCategoryBadge } from '@/components/jobs/job-category-badge';
 import { JobStatusBadge } from '@/components/jobs/job-status-badge';
+import { ShareCompletedJob } from '@/components/jobs/share-completed-job';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DateTimePickerModal } from '@/components/ui/date-time-picker-modal';
@@ -15,7 +16,7 @@ import { useJobQuotes } from '@/hooks/use-quotes';
 import { useJobSiteVisits, respondToSiteVisit } from '@/hooks/use-site-visits';
 
 export default function CustomerJobDetailScreen() {
-  const { jobId } = useLocalSearchParams<{ jobId: string }>();
+  const { jobId, from } = useLocalSearchParams<{ jobId: string; from?: string }>();
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { job, loading, refresh: refreshJob } = useJob(jobId);
@@ -30,7 +31,7 @@ export default function CustomerJobDetailScreen() {
   async function handleConfirmVisit(visitId: string) {
     setRespondingId(visitId);
     try {
-      await respondToSiteVisit({ visitId, action: 'confirm' });
+      await respondToSiteVisit({ visitId, action: 'confirm', respondedBy: 'customer' });
       refreshVisits();
     } catch {
       Alert.alert('Error', 'Could not confirm visit.');
@@ -42,7 +43,7 @@ export default function CustomerJobDetailScreen() {
   async function handleSuggestDate(visitId: string, date: Date) {
     setRespondingId(visitId);
     try {
-      await respondToSiteVisit({ visitId, action: 'suggest', newDatetime: date.toISOString() });
+      await respondToSiteVisit({ visitId, action: 'suggest', respondedBy: 'customer', newDatetime: date.toISOString() });
       refreshVisits();
     } catch {
       Alert.alert('Error', 'Could not suggest new date.');
@@ -55,14 +56,19 @@ export default function CustomerJobDetailScreen() {
   if (loading) return <LoadingSpinner full />;
   if (!job) return null;
 
-  const pendingVisits = visits.filter((v) => v.status === 'proposed');
+  const PAID_TRANSACTION_STATUSES = ['funds_held', 'completed_by_provider', 'confirmed_by_customer', 'released'];
+  const isPaidAwaitingStart =
+    job.status === 'accepted' && !!job.payment_status && PAID_TRANSACTION_STATUSES.includes(job.payment_status);
+
+  const pendingVisits = visits.filter((v) => v.status === 'proposed' && v.proposed_by === 'tradie');
+  const awaitingTradieVisits = visits.filter((v) => v.status === 'proposed' && v.proposed_by === 'customer');
   const confirmedVisits = visits.filter((v) => v.status === 'confirmed');
   const completedVisits = visits.filter((v) => v.status === 'completed');
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { borderBottomColor: colors.border }]}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => from === 'notifications' ? router.navigate('/(customer)/notifications' as never) : router.back()}>
           <Text style={[styles.back, { color: colors.tint }]}>← Back</Text>
         </Pressable>
         <Text style={[styles.navTitle, { color: colors.text }]}>Job Details</Text>
@@ -78,6 +84,11 @@ export default function CustomerJobDetailScreen() {
           <View style={styles.badges}>
             <JobCategoryBadge category={job.category} />
             <JobStatusBadge status={job.status} />
+            {isPaidAwaitingStart && (
+              <View style={[styles.statusBadge, { backgroundColor: '#dbeafe' }]}>
+                <Text style={[styles.statusBadgeText, { color: '#1e40af' }]}>💰 Paid</Text>
+              </View>
+            )}
           </View>
 
           <Text style={[styles.title, { color: colors.text }]}>{job.title}</Text>
@@ -136,6 +147,36 @@ export default function CustomerJobDetailScreen() {
                         <Text style={[styles.suggestBtnText, { color: Brand.secondary }]}>Suggest Another Date</Text>
                       </Pressable>
                     </View>
+                  </Card>
+                );
+              })}
+            </>
+          )}
+
+          {/* Visits where the customer suggested a new time and it's now the tradie's turn */}
+          {awaitingTradieVisits.length > 0 && (
+            <>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Awaiting Tradie Response</Text>
+              {awaitingTradieVisits.map((v) => {
+                const date = new Date(v.proposed_datetime).toLocaleDateString('en-ZA', {
+                  weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+                });
+                return (
+                  <Card key={v.id} style={[styles.visitCard, { borderColor: '#fcd34d' }]}>
+                    <View style={styles.visitRow}>
+                      <Avatar uri={v.tradie?.avatar_url} name={v.tradie?.full_name} size={36} />
+                      <View style={styles.visitInfo}>
+                        <Text style={[styles.visitName, { color: colors.text }]}>
+                          {v.tradie?.full_name ?? 'Tradie'}
+                        </Text>
+                        <Text style={[styles.visitDate, { color: colors.textSecondary }]}>
+                          📅 You suggested: {date}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.waitingNote, { color: colors.textSecondary }]}>
+                      ⏳ Waiting for the tradie to confirm or suggest another time.
+                    </Text>
                   </Card>
                 );
               })}
@@ -201,10 +242,14 @@ export default function CustomerJobDetailScreen() {
 
           {job.status === 'pending_completion' && (
             <Button
-              onPress={() => router.push(`/(customer)/payments/${job.accepted_quote_id}`)}
+              onPress={() => router.push(`/(customer)/payments/${jobId}`)}
             >
               ✅ Approve Completion & Release Payment
             </Button>
+          )}
+
+          {job.status === 'completed' && (
+            <ShareCompletedJob job={job} role="customer" />
           )}
         </View>
       </ScrollView>
@@ -244,6 +289,7 @@ const styles = StyleSheet.create({
   visitInfo: { flex: 1, gap: 2 },
   visitName: { fontSize: 14, fontWeight: '700' },
   visitDate: { fontSize: 12 },
+  waitingNote: { fontSize: 12, fontStyle: 'italic' },
   visitActions: { flexDirection: 'row', gap: 8 },
   confirmBtn: {
     flex: 1,

@@ -18,13 +18,23 @@ interface JobCardProps {
   onDelete?: () => void;
   mode?: 'customer' | 'tradie';
   hasQuoted?: boolean;
+  compact?: boolean;
 }
 
-export function JobCard({ job, showDistance, distanceKm, onPress, onDelete, mode = 'customer', hasQuoted }: JobCardProps) {
+// Payment is tracked on the transaction, not job.status, so a job can sit at
+// status 'accepted' ("Quote Accepted") either before or after the customer
+// has actually paid. Once the transaction reaches any of these, funds have
+// left the customer's hands — show "Paid" instead of letting the stale
+// "Quote Accepted" badge imply payment is still outstanding.
+const PAID_TRANSACTION_STATUSES = new Set(['funds_held', 'completed_by_provider', 'confirmed_by_customer', 'released']);
+
+export function JobCard({ job, showDistance, distanceKm, onPress, onDelete, mode = 'customer', hasQuoted, compact }: JobCardProps) {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
 
   const firstImage = job.images?.[0]?.url;
+  const showPaidBanner =
+    mode === 'customer' && job.status === 'accepted' && !!job.payment_status && PAID_TRANSACTION_STATUSES.has(job.payment_status);
 
   function handlePress() {
     if (onPress) { onPress(); return; }
@@ -49,7 +59,7 @@ export function JobCard({ job, showDistance, distanceKm, onPress, onDelete, mode
   return (
     <Pressable onPress={handlePress}>
       <Card elevated style={styles.card}>
-        {firstImage && (
+        {firstImage && !compact && (
           <Image source={{ uri: firstImage }} style={styles.image} />
         )}
         {onDelete && (
@@ -66,7 +76,12 @@ export function JobCard({ job, showDistance, distanceKm, onPress, onDelete, mode
             <Text style={styles.quotedBannerText}>✅ Quote submitted</Text>
           </View>
         )}
-        <View style={styles.content}>
+        {showPaidBanner && (
+          <View style={styles.paidBanner}>
+            <Text style={styles.paidBannerText}>💰 Paid — waiting for the tradie to start</Text>
+          </View>
+        )}
+        <View style={[styles.content, compact && styles.contentCompact]}>
           <View style={styles.row}>
             <JobCategoryBadge category={job.category} />
             <JobStatusBadge status={job.status} />
@@ -120,7 +135,16 @@ const styles = StyleSheet.create({
     borderBottomColor: '#bbf7d0',
   },
   quotedBannerText: { fontSize: 13, fontWeight: '600', color: '#15803d' },
+  paidBanner: {
+    backgroundColor: '#dbeafe',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderBottomWidth: 1,
+    borderBottomColor: '#bfdbfe',
+  },
+  paidBannerText: { fontSize: 13, fontWeight: '600', color: '#1e40af' },
   content: { padding: 14, gap: 8 },
+  contentCompact: { padding: 10, gap: 5 },
   row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   title: { fontSize: 16, fontWeight: '700' },
   subtitle: { fontSize: 13, lineHeight: 18 },

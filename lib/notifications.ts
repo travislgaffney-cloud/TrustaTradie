@@ -2,6 +2,7 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
+import type { NotificationType } from '@/types/database';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -82,5 +83,91 @@ export async function sendPushToUser(
     });
   } catch (e) {
     console.warn('[sendPushToUser] push failed silently:', e);
+  }
+}
+
+/**
+ * Writes the in-app notification row and sends the push in one call, embedding
+ * `type` into the push payload's data so a tapped OS notification can be routed
+ * (the `notifications` table already has `type` as its own column, so it's left
+ * out of the row's `data` to avoid duplicating it there).
+ */
+export async function notifyUser(params: {
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  data?: Record<string, string>;
+}): Promise<void> {
+  const { userId, type, title, body, data } = params;
+
+  await supabase.from('notifications').insert({
+    user_id: userId,
+    type,
+    title,
+    body,
+    data: data ?? null,
+    is_read: false,
+  });
+
+  await sendPushToUser(userId, title, body, { ...data, type });
+}
+
+type Role = 'customer' | 'tradie';
+
+/**
+ * Maps a notification's type/data to the in-app route it should open, mirroring
+ * the per-role handleNotificationPress switches. Shared by the in-app alerts list
+ * and by the OS push-tap router so both stay in sync.
+ */
+export function getNotificationRoute(
+  type: NotificationType,
+  data: Record<string, string> | null | undefined,
+  role: Role
+): string | null {
+  if (role === 'customer') {
+    switch (type) {
+      case 'new_quote_received':
+        return data?.job_id ? `/(customer)/jobs/${data.job_id}/quotes?from=notifications` : null;
+      case 'site_visit_requested':
+      case 'site_visit_completed':
+        return data?.job_id ? `/(customer)/jobs/${data.job_id}?from=notifications` : null;
+      case 'quote_accepted':
+      case 'quote_rejected':
+      case 'job_started':
+      case 'job_completed':
+        return data?.job_id ? `/(customer)/jobs/${data.job_id}?from=notifications` : null;
+      case 'new_message':
+        return data?.conversation_id ? `/(customer)/messages/${data.conversation_id}?from=notifications` : null;
+      case 'payment_released':
+        return data?.job_id ? `/(customer)/payments/${data.job_id}?from=notifications` : '/(customer)/payments';
+      case 'rating_received':
+        return data?.job_id ? `/rate/${data.job_id}` : null;
+      default:
+        return null;
+    }
+  }
+
+  switch (type) {
+    case 'quote_accepted':
+    case 'quote_rejected':
+      return data?.job_id ? '/(tradie)/my-quotes' : null;
+    case 'new_quote_received':
+      return data?.job_id ? `/(tradie)/jobs/${data.job_id}?from=notifications` : null;
+    case 'site_visit_requested':
+      return data?.job_id ? `/(tradie)/jobs/${data.job_id}?from=notifications` : null;
+    case 'job_started':
+    case 'job_completed':
+      return '/(tradie)/my-quotes';
+    case 'payment_released':
+      return '/(tradie)/earnings';
+    case 'new_job_nearby':
+      return '/(tradie)/jobs';
+    case 'new_message':
+      return data?.conversation_id ? `/(tradie)/messages/${data.conversation_id}?from=notifications` : null;
+    case 'rating_received':
+      return '/(tradie)/profile';
+    default:
+      return null;
   }
 }

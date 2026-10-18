@@ -13,18 +13,19 @@ import {
   View,
 } from 'react-native';
 import { Avatar } from '@/components/ui/avatar';
+import { DateTimePickerModal } from '@/components/ui/date-time-picker-modal';
 import { Brand, Colors } from '@/constants/theme';
 import { TRADE_CATEGORIES } from '@/constants/trade-categories';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useMyQuotes } from '@/hooks/use-quotes';
+import { deleteQuote, useMyQuotes } from '@/hooks/use-quotes';
 import { useMyTradieJobs, startJob, completeJob } from '@/hooks/use-jobs';
+import { useMySiteVisits, type SiteVisit } from '@/hooks/use-site-visits';
 import { startJobConversation } from '@/hooks/use-messages';
 import { useAuthStore } from '@/store/auth-store';
 import { ReviewRequestButton } from '@/components/jobs/review-request-button';
+import { ShareCompletedJob } from '@/components/jobs/share-completed-job';
 import { InvoicePrompt } from '@/components/invoices/invoice-prompt';
 import type { Quote, Job } from '@/types/database';
-
-type Tab = 'quotes' | 'jobs';
 
 const STATUS_COLOR: Record<string, { bg: string; text: string }> = {
   pending:   { bg: '#fef9c3', text: '#854d0e' },
@@ -60,12 +61,26 @@ export default function MyQuotesAndJobsScreen() {
   const { profile, user } = useAuthStore();
   const { quotes, loading: quotesLoading, refresh: refreshQuotes } = useMyQuotes();
   const { jobs, loading: jobsLoading, refresh: refreshJobs } = useMyTradieJobs();
-  const [activeTab, setActiveTab] = useState<Tab>('quotes');
+  const { visits: siteVisits, loading: visitsLoading, refresh: refreshVisits } = useMySiteVisits();
   const [chattingId, setChattingId] = useState<string | null>(null);
   const [updatingJobId, setUpdatingJobId] = useState<string | null>(null);
+  const [startingJob, setStartingJob] = useState<Job | null>(null);
   const [invoiceJob, setInvoiceJob] = useState<Job | null>(null);
+  const [jobTab, setJobTab] = useState<'active' | 'completed'>('active');
 
-  const loading = activeTab === 'quotes' ? quotesLoading : jobsLoading;
+  const loading = quotesLoading || jobsLoading || visitsLoading;
+
+  // A site visit only belongs in "yet to quote" until this tradie submits a quote for that job
+  const quotedJobIds = new Set(quotes.map((q) => q.job_id));
+  const siteVisitsToQuote = siteVisits.filter((v) => !quotedJobIds.has(v.job_id));
+  const pendingQuotes = quotes.filter((q) => q.status === 'pending');
+  const rejectedQuotes = quotes.filter((q) => q.status === 'rejected');
+
+  function refreshAll() {
+    refreshQuotes();
+    refreshJobs();
+    refreshVisits();
+  }
 
   async function handleStartChat(id: string, customerId: string, jobId: string) {
     setChattingId(id);
@@ -79,28 +94,23 @@ export default function MyQuotesAndJobsScreen() {
     }
   }
 
-  async function handleStartJob(job: Job) {
-    Alert.alert(
-      'Start Job',
-      `Mark "${job.title}" as in progress? The customer will be notified.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Start Job',
-          onPress: async () => {
-            setUpdatingJobId(job.id);
-            try {
-              await startJob(job.id, user!.id);
-              refreshJobs();
-            } catch {
-              Alert.alert('Error', 'Could not update job status.');
-            } finally {
-              setUpdatingJobId(null);
-            }
-          },
-        },
-      ]
-    );
+  function handleStartJob(job: Job) {
+    setStartingJob(job);
+  }
+
+  async function handleConfirmStartJob(date: Date) {
+    if (!startingJob) return;
+    const job = startingJob;
+    setUpdatingJobId(job.id);
+    try {
+      await startJob(job.id, user!.id, date);
+      refreshJobs();
+    } catch {
+      Alert.alert('Error', 'Could not book a start date for this job.');
+    } finally {
+      setUpdatingJobId(null);
+      setStartingJob(null);
+    }
   }
 
   async function handleCompleteJob(job: Job) {
@@ -116,10 +126,32 @@ export default function MyQuotesAndJobsScreen() {
             try {
               await completeJob(job.id, user!.id);
               refreshJobs();
-            } catch {
-              Alert.alert('Error', 'Could not update job status.');
+            } catch (err) {
+              Alert.alert('Could not complete job', err instanceof Error ? err.message : 'Something went wrong. Please try again.');
             } finally {
               setUpdatingJobId(null);
+            }
+          },
+        },
+      ]
+    );
+  }
+
+  function handleDeleteQuote(quoteId: string) {
+    Alert.alert(
+      'Remove quote',
+      'This will remove the job card from your list. You can no longer act on it.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteQuote(quoteId);
+              refreshQuotes();
+            } catch (err) {
+              Alert.alert('Could not remove', err instanceof Error ? err.message : 'Something went wrong. Please try again.');
             }
           },
         },
@@ -138,7 +170,47 @@ export default function MyQuotesAndJobsScreen() {
   useFocusEffect(useCallback(() => {
     refreshQuotes();
     refreshJobs();
-  }, [refreshQuotes, refreshJobs]));
+    refreshVisits();
+  }, [refreshQuotes, refreshJobs, refreshVisits]));
+
+  function renderSiteVisitCard(v: SiteVisit) {
+    const cat = TRADE_CATEGORIES.find((c) => c.value === v.job?.category);
+    const date = new Date(v.proposed_datetime).toLocaleDateString('en-ZA', {
+      weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+    });
+    return (
+      <View
+        key={v.id}
+        style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      >
+        <View style={styles.cardTop}>
+          <View style={styles.jobRow}>
+            {cat && <Text style={styles.catIcon}>{cat.icon}</Text>}
+            <Text style={[styles.jobTitle, { color: colors.text }]} numberOfLines={1}>
+              {v.job?.title ?? 'Job'}
+            </Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: v.status === 'confirmed' ? '#dcfce7' : '#fef9c3' }]}>
+            <Text style={[styles.statusText, { color: v.status === 'confirmed' ? '#166534' : '#854d0e' }]}>
+              {v.status === 'confirmed' ? 'Visit Confirmed' : 'Visit Proposed'}
+            </Text>
+          </View>
+        </View>
+
+        <Text style={[styles.timeline, { color: colors.textSecondary }]}>📅 {date}</Text>
+        {v.job?.suburb && (
+          <Text style={[styles.locationText, { color: colors.textSecondary }]}>📍 {v.job.suburb}</Text>
+        )}
+
+        <Pressable
+          style={[styles.outlineBtn, { borderColor: Brand.secondary, marginTop: 4 }]}
+          onPress={() => router.push(`/(tradie)/jobs/${v.job_id}/submit-quote`)}
+        >
+          <Text style={[styles.outlineBtnText, { color: Brand.secondary }]}>📝 Submit Quote →</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   function renderQuoteCard(q: Quote) {
     const cat = TRADE_CATEGORIES.find((c) => c.value === q.job?.category);
@@ -200,6 +272,12 @@ export default function MyQuotesAndJobsScreen() {
               <Text style={[styles.outlineBtnText, { color: Brand.secondary }]}>View Job →</Text>
             </Pressable>
           </View>
+        )}
+
+        {q.status === 'rejected' && (
+          <Pressable style={[styles.outlineBtn, { borderColor: '#ef4444' }]} onPress={() => handleDeleteQuote(q.id)}>
+            <Text style={[styles.outlineBtnText, { color: '#ef4444' }]}>🗑 Remove</Text>
+          </Pressable>
         )}
       </View>
     );
@@ -267,7 +345,7 @@ export default function MyQuotesAndJobsScreen() {
               {isUpdating
                 ? <ActivityIndicator size="small" color={Brand.secondary} />
                 : <Text style={[styles.outlineBtnText, { color: Brand.secondary }]}>
-                    {job.status === 'accepted' ? '▶️ Start Job' : '✅ Complete Job'}
+                    {job.status === 'accepted' ? '📅 Start Job' : '✅ Complete Job'}
                   </Text>
               }
             </Pressable>
@@ -285,12 +363,18 @@ export default function MyQuotesAndJobsScreen() {
             </Pressable>
           </View>
         )}
+
+        {job.status === 'completed' && (
+          <ShareCompletedJob job={job} role="tradie" onPhotoAdded={refreshJobs} />
+        )}
       </View>
     );
   }
 
-  const quotesCount = quotes.length;
-  const jobsCount = jobs.length;
+  const activeJobs = jobs.filter((j) => j.status !== 'completed');
+  const completedJobsList = jobs.filter((j) => j.status === 'completed');
+  const totalCount = siteVisitsToQuote.length + pendingQuotes.length + activeJobs.length + completedJobsList.length;
+  const isEmpty = !loading && totalCount === 0 && rejectedQuotes.length === 0;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -298,76 +382,86 @@ export default function MyQuotesAndJobsScreen() {
         <View style={styles.bannerText}>
           <Text style={styles.bannerTitle}>My Jobs</Text>
           <Text style={styles.bannerSub}>
-            {activeTab === 'quotes'
-              ? `${quotesCount} quote${quotesCount !== 1 ? 's' : ''} submitted`
-              : `${jobsCount} active job${jobsCount !== 1 ? 's' : ''}`
-            }
+            {totalCount} active item{totalCount !== 1 ? 's' : ''}
           </Text>
         </View>
         <Avatar uri={profile?.avatar_url} name={profile?.full_name} size={40} color="#38BDF8" />
       </View>
 
-      {/* Sub-tabs */}
-      <View style={[styles.tabBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <Pressable
-          style={[styles.tab, activeTab === 'quotes' && styles.tabActive]}
-          onPress={() => setActiveTab('quotes')}
-        >
-          <Text style={[
-            styles.tabText,
-            { color: activeTab === 'quotes' ? Brand.primary : colors.textSecondary },
-          ]}>
-            My Quotes
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.tab, activeTab === 'jobs' && styles.tabActive]}
-          onPress={() => setActiveTab('jobs')}
-        >
-          <Text style={[
-            styles.tabText,
-            { color: activeTab === 'jobs' ? Brand.primary : colors.textSecondary },
-          ]}>
-            My Jobs
-          </Text>
-        </Pressable>
-      </View>
-
-      {loading && (activeTab === 'quotes' ? quotes.length === 0 : jobs.length === 0) ? (
+      {loading && totalCount === 0 ? (
         <View style={styles.center}>
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Loading...</Text>
         </View>
-      ) : activeTab === 'quotes' && quotes.length === 0 ? (
-        <View style={styles.center}>
-          <Text style={styles.emptyIcon}>📝</Text>
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>No quotes yet</Text>
-          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            Browse nearby jobs and submit quotes to start winning work.
-          </Text>
-        </View>
-      ) : activeTab === 'jobs' && jobs.length === 0 ? (
+      ) : isEmpty ? (
         <View style={styles.center}>
           <Text style={styles.emptyIcon}>🔨</Text>
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>No active jobs</Text>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>Nothing on the go yet</Text>
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            Jobs will appear here once your quotes are accepted and dates are confirmed.
+            Browse nearby jobs to book a site visit or submit a quote — everything you're working on will show up here.
           </Text>
         </View>
       ) : (
         <ScrollView
           contentContainerStyle={styles.scroll}
           refreshControl={
-            <RefreshControl
-              refreshing={loading}
-              onRefresh={activeTab === 'quotes' ? refreshQuotes : refreshJobs}
-              tintColor={Brand.primary}
-            />
+            <RefreshControl refreshing={loading} onRefresh={refreshAll} tintColor={Brand.primary} />
           }
         >
-          {activeTab === 'quotes'
-            ? quotes.map(renderQuoteCard)
-            : jobs.map(renderJobCard)
-          }
+          {siteVisitsToQuote.length > 0 && (
+            <>
+              <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>📅 Site Visit Booked</Text>
+              {siteVisitsToQuote.map(renderSiteVisitCard)}
+            </>
+          )}
+          {pendingQuotes.length > 0 && (
+            <>
+              <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>📝 Quote Submitted</Text>
+              {pendingQuotes.map(renderQuoteCard)}
+            </>
+          )}
+          {(activeJobs.length > 0 || completedJobsList.length > 0) && (
+            <>
+              <View style={[styles.jobTabBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Pressable
+                  style={[styles.jobTabBtn, jobTab === 'active' && { backgroundColor: Brand.primary }]}
+                  onPress={() => setJobTab('active')}
+                >
+                  <Text style={[styles.jobTabText, { color: jobTab === 'active' ? '#fff' : colors.textSecondary }]}>
+                    🔨 Active ({activeJobs.length})
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.jobTabBtn, jobTab === 'completed' && { backgroundColor: Brand.primary }]}
+                  onPress={() => setJobTab('completed')}
+                >
+                  <Text style={[styles.jobTabText, { color: jobTab === 'completed' ? '#fff' : colors.textSecondary }]}>
+                    ✅ Completed ({completedJobsList.length})
+                  </Text>
+                </Pressable>
+              </View>
+              {jobTab === 'active' ? (
+                activeJobs.length > 0 ? (
+                  activeJobs.map(renderJobCard)
+                ) : (
+                  <Text style={[styles.emptyText, { color: colors.textSecondary, paddingVertical: 20, textAlign: 'center' }]}>
+                    No active jobs right now.
+                  </Text>
+                )
+              ) : completedJobsList.length > 0 ? (
+                completedJobsList.map(renderJobCard)
+              ) : (
+                <Text style={[styles.emptyText, { color: colors.textSecondary, paddingVertical: 20, textAlign: 'center' }]}>
+                  No completed jobs yet.
+                </Text>
+              )}
+            </>
+          )}
+          {rejectedQuotes.length > 0 && (
+            <>
+              <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>❌ Unsuccessful</Text>
+              {rejectedQuotes.map(renderQuoteCard)}
+            </>
+          )}
         </ScrollView>
       )}
       {invoiceJob && user && (
@@ -380,6 +474,12 @@ export default function MyQuotesAndJobsScreen() {
           jobTitle={invoiceJob.title}
         />
       )}
+
+      <DateTimePickerModal
+        visible={!!startingJob}
+        onClose={() => setStartingJob(null)}
+        onConfirm={handleConfirmStartJob}
+      />
     </SafeAreaView>
   );
 }
@@ -397,23 +497,10 @@ const styles = StyleSheet.create({
   bannerText: { gap: 4 },
   bannerTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
   bannerSub: { fontSize: 13, color: 'rgba(255,255,255,0.75)' },
-  tabBar: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  tabActive: {
-    borderBottomWidth: 2,
-    borderBottomColor: Brand.primary,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
+  sectionHeader: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 4 },
+  jobTabBar: { flexDirection: 'row', borderRadius: 12, borderWidth: 1, padding: 4, gap: 4, marginTop: 4 },
+  jobTabBtn: { flex: 1, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
+  jobTabText: { fontSize: 13, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
   emptyIcon: { fontSize: 48 },
   emptyTitle: { fontSize: 18, fontWeight: '700' },

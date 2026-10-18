@@ -25,7 +25,8 @@ export type NotificationType =
   | 'payment_released'
   | 'new_message'
   | 'rating_received'
-  | 'site_visit_requested';
+  | 'site_visit_requested'
+  | 'site_visit_completed';
 
 export type TransactionStatus =
   | 'quoted'
@@ -108,6 +109,7 @@ export interface Job {
   quote_count?: number;
   latitude?: number;
   longitude?: number;
+  payment_status?: TransactionStatus | null;
 }
 
 export interface JobImage {

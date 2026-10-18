@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { sendPushToUser } from '@/lib/notifications';
+import { notifyUser } from '@/lib/notifications';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useAuthStore } from '@/store/auth-store';
+import type { Job } from '@/types/database';
 
 export type SiteVisitStatus = 'proposed' | 'confirmed' | 'completed' | 'cancelled';
+export type ProposedBy = 'tradie' | 'customer';
 
 export interface SiteVisit {
   id: string;
@@ -12,17 +15,20 @@ export interface SiteVisit {
   customer_id: string;
   proposed_datetime: string;
   status: SiteVisitStatus;
+  proposed_by: ProposedBy;
   created_at: string;
   updated_at: string;
   tradie?: { full_name: string; avatar_url: string | null };
   customer?: { full_name: string };
-  job?: { title: string };
+  job?: Job;
 }
 
 export function useSiteVisit(jobId: string, tradieId?: string) {
   const { user } = useAuthStore();
   const [visit, setVisit] = useState<SiteVisit | null>(null);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const instanceId = useRef(Math.random().toString(36).slice(2, 7)).current;
 
   const fetchVisit = useCallback(async () => {
     if (!jobId || !user) return;
@@ -46,14 +52,65 @@ export function useSiteVisit(jobId: string, tradieId?: string) {
 
   useEffect(() => {
     fetchVisit();
-  }, [fetchVisit]);
+    if (!jobId) return;
+
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    channelRef.current = supabase
+      .channel(`site_visit:${jobId}:${instanceId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'site_visits', filter: `job_id=eq.${jobId}` }, () => fetchVisit())
+      .subscribe();
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [fetchVisit, jobId]);
+
+  useRefreshOnFocus(fetchVisit);
 
   return { visit, loading, refresh: fetchVisit };
+}
+
+// All upcoming (proposed/confirmed) site visits for the logged-in tradie,
+// across every job — used to surface "booked but not yet quoted" jobs.
+export function useMySiteVisits() {
+  const { user } = useAuthStore();
+  const [visits, setVisits] = useState<SiteVisit[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchVisits = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data } = await supabase
+      .from('site_visits')
+      .select('*, job:jobs!site_visits_job_id_fkey(*)')
+      .eq('tradie_id', user.id)
+      .in('status', ['proposed', 'confirmed'])
+      .order('proposed_datetime', { ascending: true });
+    setVisits((data as SiteVisit[]) ?? []);
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    if (user) fetchVisits();
+  }, [user, fetchVisits]);
+
+  useRefreshOnFocus(fetchVisits);
+
+  return { visits, loading, refresh: fetchVisits };
 }
 
 export function useJobSiteVisits(jobId: string) {
   const [visits, setVisits] = useState<SiteVisit[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const instanceId = useRef(Math.random().toString(36).slice(2, 7)).current;
 
   const fetchVisits = useCallback(async () => {
     if (!jobId) return;
@@ -69,7 +126,27 @@ export function useJobSiteVisits(jobId: string) {
 
   useEffect(() => {
     fetchVisits();
-  }, [fetchVisits]);
+    if (!jobId) return;
+
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    channelRef.current = supabase
+      .channel(`job_site_visits:${jobId}:${instanceId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'site_visits', filter: `job_id=eq.${jobId}` }, () => fetchVisits())
+      .subscribe();
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [fetchVisits, jobId]);
+
+  useRefreshOnFocus(fetchVisits);
 
   return { visits, loading, refresh: fetchVisits };
 }
@@ -88,6 +165,7 @@ export async function requestSiteVisit(params: {
       customer_id: params.customerId,
       proposed_datetime: params.proposedDatetime,
       status: 'proposed',
+      proposed_by: 'tradie',
     }, { onConflict: 'job_id,tradie_id' });
 
   if (error) throw error;
@@ -109,20 +187,19 @@ export async function requestSiteVisit(params: {
   });
 
   const body = `${tradie?.full_name ?? 'A tradie'} wants to view "${job?.title ?? 'your job'}" on ${date}`;
-  await supabase.from('notifications').insert({
-    user_id: params.customerId,
-    type: 'new_quote_received',
+  await notifyUser({
+    userId: params.customerId,
+    type: 'site_visit_requested',
     title: 'Site Visit Request',
     body,
     data: { job_id: params.jobId },
-    is_read: false,
   });
-  sendPushToUser(params.customerId, 'Site Visit Request', body, { job_id: params.jobId });
 }
 
 export async function respondToSiteVisit(params: {
   visitId: string;
   action: 'confirm' | 'suggest';
+  respondedBy: ProposedBy;
   newDatetime?: string;
 }): Promise<void> {
   if (params.action === 'confirm') {
@@ -133,7 +210,7 @@ export async function respondToSiteVisit(params: {
 
     const { data: visit } = await supabase
       .from('site_visits')
-      .select('tradie_id, job_id, proposed_datetime, job:jobs!site_visits_job_id_fkey(title)')
+      .select('tradie_id, customer_id, job_id, proposed_datetime, job:jobs!site_visits_job_id_fkey(title)')
       .eq('id', params.visitId)
       .single();
 
@@ -142,25 +219,25 @@ export async function respondToSiteVisit(params: {
         weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
       });
       const body = `Your site visit for "${(visit as any).job?.title ?? 'a job'}" on ${date} has been confirmed`;
-      await supabase.from('notifications').insert({
-        user_id: (visit as any).tradie_id,
+      // Notify whichever party did NOT just confirm
+      const notifyUserId = params.respondedBy === 'tradie' ? (visit as any).customer_id : (visit as any).tradie_id;
+      await notifyUser({
+        userId: notifyUserId,
         type: 'quote_accepted',
         title: 'Visit Confirmed',
         body,
         data: { job_id: (visit as any).job_id },
-        is_read: false,
       });
-      sendPushToUser((visit as any).tradie_id, 'Visit Confirmed', body, { job_id: (visit as any).job_id });
     }
   } else if (params.action === 'suggest' && params.newDatetime) {
     await supabase
       .from('site_visits')
-      .update({ proposed_datetime: params.newDatetime, status: 'proposed' })
+      .update({ proposed_datetime: params.newDatetime, status: 'proposed', proposed_by: params.respondedBy })
       .eq('id', params.visitId);
 
     const { data: visit } = await supabase
       .from('site_visits')
-      .select('tradie_id, job_id, job:jobs!site_visits_job_id_fkey(title), customer:profiles!site_visits_customer_id_fkey(full_name)')
+      .select('tradie_id, customer_id, job_id, job:jobs!site_visits_job_id_fkey(title), customer:profiles!site_visits_customer_id_fkey(full_name), tradie:profiles!site_visits_tradie_id_fkey(full_name)')
       .eq('id', params.visitId)
       .single();
 
@@ -168,16 +245,18 @@ export async function respondToSiteVisit(params: {
       const date = new Date(params.newDatetime).toLocaleDateString('en-ZA', {
         weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
       });
-      const body = `${(visit as any).customer?.full_name ?? 'The customer'} suggested a new time for viewing "${(visit as any).job?.title ?? 'a job'}": ${date}`;
-      await supabase.from('notifications').insert({
-        user_id: (visit as any).tradie_id,
-        type: 'new_quote_received',
+      const proposerName = params.respondedBy === 'customer'
+        ? ((visit as any).customer?.full_name ?? 'The customer')
+        : ((visit as any).tradie?.full_name ?? 'The tradie');
+      const notifyUserId = params.respondedBy === 'customer' ? (visit as any).tradie_id : (visit as any).customer_id;
+      const body = `${proposerName} suggested a new time for viewing "${(visit as any).job?.title ?? 'a job'}": ${date}`;
+      await notifyUser({
+        userId: notifyUserId,
+        type: 'site_visit_requested',
         title: 'New Time Suggested',
         body,
         data: { job_id: (visit as any).job_id },
-        is_read: false,
       });
-      sendPushToUser((visit as any).tradie_id, 'New Time Suggested', body, { job_id: (visit as any).job_id });
     }
   }
 }
@@ -189,4 +268,21 @@ export async function markSiteVisitComplete(visitId: string): Promise<void> {
     .eq('id', visitId);
 
   if (error) throw error;
+
+  const { data: visit } = await supabase
+    .from('site_visits')
+    .select('customer_id, job_id, job:jobs!site_visits_job_id_fkey(title)')
+    .eq('id', visitId)
+    .single();
+
+  if (visit) {
+    const body = `The tradie has viewed "${(visit as any).job?.title ?? 'your job'}". You can expect a quote soon.`;
+    await notifyUser({
+      userId: (visit as any).customer_id,
+      type: 'site_visit_completed',
+      title: 'Site Visit Complete',
+      body,
+      data: { job_id: (visit as any).job_id },
+    });
+  }
 }
