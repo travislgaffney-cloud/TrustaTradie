@@ -21,6 +21,8 @@ export default function AuthLayout() {
       <Stack.Screen name="sign-up-tradie" />
       <Stack.Screen name="sign-up-location" />
       <Stack.Screen name="forgot-password" />
+      <Stack.Screen name="confirm-email" />
+      <Stack.Screen name="google-setup" />
     </Stack>
   );
 }

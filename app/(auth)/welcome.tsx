@@ -2,16 +2,22 @@ import { Link } from 'expo-router';
 import React from 'react';
 import {
   Image,
+  Linking,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { AppleSignInButton } from '@/components/auth/apple-sign-in-button';
+import { FacebookSignInButton } from '@/components/auth/facebook-sign-in-button';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { Button } from '@/components/ui/button';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+
+const PRIVACY_POLICY_URL = 'https://admin-five-chi-53.vercel.app/privacy';
+const TERMS_OF_SERVICE_URL = 'https://admin-five-chi-53.vercel.app/terms';
 
 export default function WelcomeScreen() {
   const scheme = useColorScheme() ?? 'light';
@@ -34,7 +40,9 @@ export default function WelcomeScreen() {
 
         {/* Auth actions */}
         <View style={styles.actions}>
+          <AppleSignInButton />
           <GoogleSignInButton />
+          <FacebookSignInButton />
 
           <View style={styles.divider}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
@@ -51,7 +59,21 @@ export default function WelcomeScreen() {
           </Link>
 
           <Text style={[styles.terms, { color: colors.textSecondary }]}>
-            By continuing, you agree to our Terms of Service and Privacy Policy.
+            By continuing, you agree to our{' '}
+            <Text
+              style={[styles.termsLink, { color: Brand.primary }]}
+              onPress={() => Linking.openURL(TERMS_OF_SERVICE_URL)}
+            >
+              Terms of Service
+            </Text>
+            {' '}and{' '}
+            <Text
+              style={[styles.termsLink, { color: Brand.primary }]}
+              onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+            >
+              Privacy Policy
+            </Text>
+            .
           </Text>
         </View>
       </ScrollView>
@@ -100,5 +122,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     marginTop: 8,
+  },
+  termsLink: {
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
 });

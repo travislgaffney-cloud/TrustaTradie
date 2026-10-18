@@ -3,8 +3,6 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -13,8 +11,10 @@ import {
   View,
 } from 'react-native';
 import { z } from 'zod';
+import { TermsConsent } from '@/components/auth/terms-consent';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { KeyboardAvoidingView } from '@/components/ui/keyboard-avoiding-view';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { Brand, Colors } from '@/constants/theme';
 import { TRADE_CATEGORIES, type TradeCategory } from '@/constants/trade-categories';
@@ -43,6 +43,8 @@ export default function SignUpTradieScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<TradeCategory[]>([]);
+  const [agreed, setAgreed] = useState(false);
+  const [agreedError, setAgreedError] = useState<string | null>(null);
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -59,10 +61,15 @@ export default function SignUpTradieScreen() {
       setError('Select at least one trade category');
       return;
     }
+    if (!agreed) {
+      setAgreedError('You must agree to the Terms of Service and Privacy Policy to continue.');
+      return;
+    }
+    setAgreedError(null);
     setLoading(true);
     setError(null);
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
@@ -82,13 +89,17 @@ export default function SignUpTradieScreen() {
       return;
     }
 
-    router.push('/(auth)/sign-up-location');
+    if (!signUpData.session) {
+      router.replace(`/(auth)/confirm-email?email=${encodeURIComponent(data.email)}`);
+    } else {
+      router.push('/(auth)/sign-up-location');
+    }
     setLoading(false);
   }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Pressable onPress={() => router.back()} style={styles.back}>
             <Text style={[styles.backText, { color: colors.tint }]}>← Back</Text>
@@ -144,6 +155,8 @@ export default function SignUpTradieScreen() {
             <Controller control={control} name="confirmPassword" render={({ field }) => (
               <Input label="Confirm password" secureTextEntry error={errors.confirmPassword?.message} onChangeText={field.onChange} value={field.value} />
             )} />
+
+            <TermsConsent checked={agreed} onToggle={setAgreed} textColor={colors.textSecondary} error={agreedError ?? undefined} />
 
             {error && (
               <View style={[styles.errorBox, { backgroundColor: '#fee2e2' }]}>

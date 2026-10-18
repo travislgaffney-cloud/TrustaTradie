@@ -1,10 +1,6 @@
-import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -12,90 +8,71 @@ import {
   Text,
   View,
 } from 'react-native';
+import { TownSelector } from '@/components/tradie/town-selector';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { KeyboardAvoidingView } from '@/components/ui/keyboard-avoiding-view';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { StepIndicator } from '@/components/ui/step-indicator';
-import { Brand, Colors } from '@/constants/theme';
+import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/auth-store';
-import type { Profile } from '@/types/database';
+import type { Profile, TradieProfile } from '@/types/database';
 
+// Geolocation-based matching is parked for now (see hooks/use-location.ts,
+// hooks/use-nearby-tradies.ts, hooks/use-jobs.ts's useNearbyJobs — all left
+// intact, just unused). Customers no longer set a profile-level address at
+// all; they'll type the job site address per job instead. Tradies pick the
+// towns they service here, which is what job-matching filters on now.
 export default function SignUpLocationScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
-  const { setProfile, profile } = useAuthStore();
+  const { setProfile, profile, setTradieProfile } = useAuthStore();
+  const isTradie = profile?.role === 'tradie';
   const [loading, setLoading] = useState(false);
-  const [detecting, setDetecting] = useState(false);
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [address, setAddress] = useState('');
-  const [suburb, setSuburb] = useState('');
-  const [province, setProvince] = useState('');
+  const [towns, setTowns] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  async function detectLocation() {
-    setDetecting(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setDetecting(false);
-        return;
-      }
-
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setCoords({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-
-      const [geo] = await Location.reverseGeocodeAsync({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-      });
-
-      if (geo) {
-        setSuburb(geo.district ?? geo.subregion ?? '');
-        setProvince(geo.region ?? '');
-        setAddress(
-          [geo.street, geo.streetNumber, geo.district, geo.region, 'South Africa']
-            .filter(Boolean)
-            .join(', ')
-        );
-      }
-    } catch (_) {
-      // user denied or error — let them type manually
-    }
-    setDetecting(false);
+  async function finishCustomerSignup() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: updated } = await supabase
+      .from('profiles')
+      .update({ onboarding_complete: true })
+      .eq('id', user.id)
+      .select()
+      .single<Profile>();
+    if (updated) setProfile(updated);
   }
 
+  useEffect(() => {
+    if (!isTradie) finishCustomerSignup();
+  }, [isTradie]);
+
   async function handleSave() {
+    if (towns.length === 0) {
+      setError('Add at least one town you service');
+      return;
+    }
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
 
-    const updateData: Record<string, unknown> = {
-      address_text: address,
-      suburb: suburb || null,
-      province: province || null,
-      onboarding_complete: true,
-    };
+    const [{ data: updatedProfile }, { data: updatedTP }] = await Promise.all([
+      supabase.from('profiles').update({ onboarding_complete: true }).eq('id', user.id).select().single<Profile>(),
+      supabase.from('tradie_profiles').update({ service_towns: towns }).eq('id', user.id).select().single<TradieProfile>(),
+    ]);
 
-    if (coords) {
-      // Store as WKT point for PostGIS
-      updateData.location = `POINT(${coords.lng} ${coords.lat})`;
-    }
-
-    await supabase.from('profiles').update(updateData).eq('id', user.id);
-
-    const { data: updated } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single<Profile>();
-
-    if (updated) setProfile(updated);
+    if (updatedProfile) setProfile(updatedProfile);
+    if (updatedTP) setTradieProfile(updatedTP);
     setLoading(false);
   }
 
+  if (!isTradie) return <LoadingSpinner full />;
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Pressable onPress={() => router.back()} style={styles.back}>
           <Text style={[styles.backText, { color: colors.tint }]}>← Back</Text>
@@ -103,63 +80,23 @@ export default function SignUpLocationScreen() {
 
         <StepIndicator steps={3} current={3} />
 
-        <Text style={[styles.title, { color: colors.text }]}>Your location</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Towns you service</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          We use your location to match you with nearby jobs and tradies.
+          Add every town you are willing to travel to for work. Customers posting jobs in these towns will be able to find you.
         </Text>
 
-        <View style={[styles.detectBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={styles.detectIcon}>📍</Text>
-          <Text style={[styles.detectTitle, { color: colors.text }]}>
-            {coords ? 'Location detected' : 'Auto-detect your location'}
-          </Text>
-          {coords && (
-            <Text style={[styles.detectAddress, { color: colors.textSecondary }]}>
-              {address}
-            </Text>
-          )}
-          <Button
-            variant={coords ? 'secondary' : 'primary'}
-            size="sm"
-            loading={detecting}
-            onPress={detectLocation}
-          >
-            {coords ? '🔄 Re-detect' : '📡 Use my location'}
-          </Button>
-        </View>
+        <TownSelector towns={towns} onChange={(t) => { setTowns(t); setError(null); }} />
 
-        <View style={styles.form}>
-          <Input
-            label="Full address"
-            value={address}
-            onChangeText={setAddress}
-            placeholder="123 Main Road, Sandton"
-            multiline
-          />
-          <Input
-            label="Suburb"
-            value={suburb}
-            onChangeText={setSuburb}
-            placeholder="e.g. Sandton"
-          />
-          <Input
-            label="Province"
-            value={province}
-            onChangeText={setProvince}
-            placeholder="e.g. Gauteng"
-          />
-        </View>
+        {error && (
+          <View style={[styles.errorBox, { backgroundColor: '#fee2e2' }]}>
+            <Text style={{ color: '#991b1b' }}>{error}</Text>
+          </View>
+        )}
 
         <View style={styles.footer}>
-          <Button size="lg" loading={loading} onPress={handleSave} disabled={!address}>
+          <Button size="lg" loading={loading} onPress={handleSave}>
             Finish setup
           </Button>
-
-          <Pressable onPress={handleSave}>
-            <Text style={[styles.skipText, { color: colors.textSecondary }]}>
-              Skip for now
-            </Text>
-          </Pressable>
         </View>
       </ScrollView>
       </KeyboardAvoidingView>
@@ -174,17 +111,6 @@ const styles = StyleSheet.create({
   backText: { fontSize: 16 },
   title: { fontSize: 26, fontWeight: '800', marginTop: 8 },
   subtitle: { fontSize: 15, lineHeight: 22 },
-  detectBox: {
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 20,
-    alignItems: 'center',
-    gap: 8,
-  },
-  detectIcon: { fontSize: 36 },
-  detectTitle: { fontSize: 16, fontWeight: '600' },
-  detectAddress: { fontSize: 13, textAlign: 'center' },
-  form: { gap: 14 },
+  errorBox: { borderRadius: 8, padding: 12 },
   footer: { marginTop: 'auto', paddingTop: 16, gap: 12, alignItems: 'center' },
-  skipText: { fontSize: 14 },
 });

@@ -3,8 +3,6 @@ import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -20,6 +18,7 @@ import {
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { KeyboardAvoidingView } from '@/components/ui/keyboard-avoiding-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { supabase } from '@/lib/supabase';
@@ -36,6 +35,8 @@ export default function SignInScreen() {
   const colors = Colors[scheme];
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
 
   const {
     control,
@@ -47,25 +48,53 @@ export default function SignInScreen() {
   async function onSubmit(data: FormData) {
     setLoading(true);
     setError(null);
+    setUnconfirmedEmail(null);
     const { error: authError } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
     });
 
     if (authError) {
-      setError(authError.message);
+      if (authError.code === 'email_not_confirmed') {
+        setUnconfirmedEmail(data.email);
+      } else {
+        setError(authError.message);
+      }
     } else {
       await saveBiometricCredentials(data.email, data.password);
+
+      // With email confirmation on, this is the first time a signed-up-but-
+      // not-yet-onboarded user gets a session — signUp() itself no longer
+      // hands one out until they've confirmed. If onboarding never finished
+      // (they confirmed but never came back to set location before), resume
+      // it here rather than leaving them stuck with an authenticated session
+      // and nowhere to go. Mirrors GoogleSignInButton's same check.
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('onboarding_complete')
+          .eq('id', user.id)
+          .single();
+        if (!profile?.onboarding_complete) {
+          router.replace('/(auth)/sign-up-location');
+        }
+      }
     }
     setLoading(false);
   }
 
+  async function handleResend() {
+    if (!unconfirmedEmail) return;
+    setResending(true);
+    const { error: resendError } = await supabase.auth.resend({ type: 'signup', email: unconfirmedEmail });
+    setResending(false);
+    setError(resendError ? resendError.message : 'Confirmation email resent — check your inbox.');
+  }
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Pressable onPress={() => router.back()} style={styles.back}>
             <Text style={[styles.backText, { color: colors.tint }]}>← Back</Text>
@@ -115,6 +144,19 @@ export default function SignInScreen() {
                 </Text>
               </Pressable>
             </Link>
+
+            {unconfirmedEmail && (
+              <View style={[styles.errorBox, { backgroundColor: '#fffbeb' }]}>
+                <Text style={[styles.errorText, { color: '#92400e' }]}>
+                  Your email isn't confirmed yet. Check your inbox for the confirmation link, or resend it below.
+                </Text>
+                <Pressable onPress={handleResend} disabled={resending} style={styles.resendLink}>
+                  <Text style={[styles.resendText, { color: colors.tint }]}>
+                    {resending ? 'Sending…' : 'Resend confirmation email'}
+                  </Text>
+                </Pressable>
+              </View>
+            )}
 
             {error && (
               <View style={[styles.errorBox, { backgroundColor: '#fee2e2' }]}>
@@ -172,6 +214,8 @@ const styles = StyleSheet.create({
   forgotText: { fontSize: 14, fontWeight: '500' },
   errorBox: { borderRadius: 8, padding: 12 },
   errorText: { fontSize: 14 },
+  resendLink: { marginTop: 8 },
+  resendText: { fontSize: 14, fontWeight: '600' },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
