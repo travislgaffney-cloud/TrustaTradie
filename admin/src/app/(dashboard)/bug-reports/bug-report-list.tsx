@@ -51,6 +51,20 @@ export function BugReportList({ reports: initial }: { reports: BugReport[] }) {
     setLoading(null);
   }
 
+  async function handleDelete(id: string) {
+    if (!confirm("Permanently delete this bug report? This cannot be undone.")) return;
+    setLoading(id);
+    const res = await fetch("/api/bug-reports/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (res.ok) {
+      setReports((prev) => prev.filter((r) => r.id !== id));
+    }
+    setLoading(null);
+  }
+
   return (
     <>
       <div className="flex gap-2 mb-4">
@@ -128,6 +142,16 @@ export function BugReportList({ reports: initial }: { reports: BugReport[] }) {
                         : report.resolved
                         ? "Reopen"
                         : "Resolve"}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(report.id);
+                      }}
+                      disabled={loading === report.id}
+                      className="px-3 py-1 rounded-lg text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition disabled:opacity-50"
+                    >
+                      Delete
                     </button>
                     <span className="text-gray-400">{isExpanded ? "▼" : "▶"}</span>
                   </div>

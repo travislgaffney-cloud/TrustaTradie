@@ -64,6 +64,29 @@ export function UserList({ users: initial }: { users: User[] }) {
     setLoading(null);
   }
 
+  async function handleDelete(id: string, name: string) {
+    if (
+      !confirm(
+        `Delete "${name}"?\n\nThis anonymizes their profile (name, phone, bio, address, bank details) and permanently locks them out — they can never sign in again. Their jobs, quotes, messages, ratings, transactions, payments, and invoices are kept (under "Deleted User") since the other party's records and tax law both require it. This cannot be undone.\n\nConsider Suspend instead if you just want to temporarily disable the account.`
+      )
+    )
+      return;
+    setLoading(id);
+    const res = await fetch("/api/users/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (res.ok) {
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+      setExpanded(null);
+    } else {
+      const data = await res.json().catch(() => null);
+      alert(`Could not delete user: ${data?.error ?? "Unknown error"}`);
+    }
+    setLoading(null);
+  }
+
   async function handleVerifyTradie(id: string) {
     setLoading(id);
     const res = await fetch("/api/users/verify-tradie", {
@@ -243,6 +266,21 @@ export function UserList({ users: initial }: { users: User[] }) {
                               </div>
                             </>
                           )}
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+                          <p className="text-xs text-gray-400">
+                            Deleting removes this user and all their jobs, quotes, messages, ratings, and payment history.
+                          </p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(u.id, u.full_name || "this user");
+                            }}
+                            disabled={loading === u.id}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50 shrink-0 ml-4"
+                          >
+                            {loading === u.id ? "..." : "Delete User"}
+                          </button>
                         </div>
                       </td>
                     </tr>

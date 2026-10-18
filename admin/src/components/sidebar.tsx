@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: "📊" },
@@ -10,10 +10,19 @@ const NAV_ITEMS = [
   { href: "/users", label: "Users", icon: "👥" },
   { href: "/disputes", label: "Disputes", icon: "⚖️" },
   { href: "/bug-reports", label: "Bug Reports", icon: "🐛" },
+  { href: "/reports", label: "Reports", icon: "🧾" },
+  { href: "/settings", label: "Settings", icon: "⚙️" },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch("/api/logout", { method: "POST" });
+    router.replace("/login");
+    router.refresh();
+  }
 
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-[#1B2D4F] text-white flex flex-col">
@@ -45,8 +54,14 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-white/10 text-xs text-white/40">
-        Gaffney Labs &copy; {new Date().getFullYear()}
+      <div className="p-4 border-t border-white/10 flex flex-col gap-2">
+        <button
+          onClick={handleLogout}
+          className="text-left text-xs font-medium text-white/70 hover:text-white transition"
+        >
+          🚪 Log out
+        </button>
+        <p className="text-xs text-white/40">Gaffney Labs &copy; {new Date().getFullYear()}</p>
       </div>
     </aside>
   );
