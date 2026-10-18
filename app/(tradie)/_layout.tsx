@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { ColorValue } from 'react-native';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNotifications } from '@/hooks/use-notifications';
@@ -12,7 +13,7 @@ function TabIcon({
 }: {
   name: keyof typeof Ionicons.glyphMap;
   focused: boolean;
-  color: string;
+  color: ColorValue;
 }) {
   return <Ionicons name={name} size={22} color={color} style={{ opacity: focused ? 1 : 0.7 }} />;
 }
@@ -43,6 +44,7 @@ export default function TradieLayout() {
       <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} color={color} /> }} />
       {/* Hidden sections — detail screens live inside each folder's Stack layout */}
       <Tabs.Screen name="jobs" options={{ href: null }} />
+      <Tabs.Screen name="leads" options={{ href: null }} />
       <Tabs.Screen name="active-jobs" options={{ href: null }} />
       <Tabs.Screen name="earnings" options={{ href: null }} />
       <Tabs.Screen name="calendar" options={{ href: null }} />

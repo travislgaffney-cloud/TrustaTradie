@@ -3,8 +3,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Image,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -14,6 +12,7 @@ import {
 } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { KeyboardAvoidingView } from '@/components/ui/keyboard-avoiding-view';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { supabase } from '@/lib/supabase';
@@ -132,7 +131,7 @@ export default function RateJobScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={[styles.title, { color: colors.text }]}>Rate this job</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>

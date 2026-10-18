@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { GaffneyLabsLogo } from '@/components/branding/gaffney-labs-logo';
 import { TrustATradieLogo } from '@/components/branding/trust-a-tradie-logo';
 import { Colors } from '@/constants/theme';
@@ -14,6 +14,7 @@ export function AppLoadingScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.center}>
+        <Image source={require('@/assets/images/mascot.png')} style={styles.mascot} resizeMode="contain" />
         <TrustATradieLogo textColor={wordmarkColor} />
       </View>
       <View style={styles.footer}>
@@ -32,6 +33,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
+    gap: 16,
+  },
+  mascot: {
+    width: 140,
+    height: 140,
   },
   footer: {
     alignItems: 'center',

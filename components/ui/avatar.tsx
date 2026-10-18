@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Brand } from '@/constants/theme';
 
 export interface AvatarProps {
@@ -8,9 +8,10 @@ export interface AvatarProps {
   size?: number;
   color?: string;
   verified?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function Avatar({ uri, name, size = 44, color = Brand.primary, verified }: AvatarProps) {
+export function Avatar({ uri, name, size = 44, color = Brand.primary, verified, style }: AvatarProps) {
   const initials = name
     ? name
         .split(' ')
@@ -39,10 +40,10 @@ export function Avatar({ uri, name, size = 44, color = Brand.primary, verified }
     </View>
   );
 
-  if (!verified) return avatar;
+  if (!verified) return style ? <View style={style}>{avatar}</View> : avatar;
 
   return (
-    <View style={{ width: size, height: size }}>
+    <View style={[{ width: size, height: size }, style]}>
       {avatar}
       <View style={[styles.verifiedBadge, {
         width: badgeSize,

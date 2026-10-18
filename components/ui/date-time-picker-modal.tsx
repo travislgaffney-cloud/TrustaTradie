@@ -92,7 +92,7 @@ export function DateTimePickerModal({ visible, onClose, onConfirm }: Props) {
           </Pressable>
           <Text style={styles.title}>Book a Date & Time</Text>
           <Pressable onPress={handleConfirm} disabled={!selected} style={styles.headerBtn}>
-            <Text style={[styles.confirmText, !selected && styles.confirmDis]}>Confirm</Text>
+            <Text style={[styles.confirmText, !selected && styles.confirmDis]}>Done</Text>
           </Pressable>
         </View>
 
