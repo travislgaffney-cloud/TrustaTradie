@@ -7,6 +7,23 @@ const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 );
 
+async function notifyUser(userId: string, type: string, title: string, body: string, data?: Record<string, string>) {
+  await supabaseAdmin.from('notifications').insert({ user_id: userId, type, title, body, data: data ?? null, is_read: false });
+
+  const { data: profile } = await supabaseAdmin.from('profiles').select('push_token').eq('id', userId).single();
+  if (!profile?.push_token) return;
+
+  try {
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ to: profile.push_token, title, body, data: { ...data, type }, sound: 'default', priority: 'high', channelId: 'default' }),
+    });
+  } catch (e) {
+    console.warn('[reward-slip-evaluate] push failed silently:', e);
+  }
+}
+
 // Called by the app right after a tradie inserts a reward_slips row — every
 // insert lands at 'pending' (enforced by RLS, migration 046), and this
 // function is the only thing that ever moves it to 'approved' or
@@ -98,28 +115,26 @@ Deno.serve(async (req) => {
         })
         .eq('id', slip.id);
 
-      await supabaseAdmin.from('notifications').insert({
-        user_id: slip.tradie_id,
-        type: 'reward_slip_approved',
-        title: 'Slip Approved',
-        body: `Your till slip for "${supplier.name}" was approved — R${result.rewardAmount?.toFixed(2)} reward earned.`,
-        data: { slip_id: slip.id },
-        is_read: false,
-      });
+      await notifyUser(
+        slip.tradie_id,
+        'reward_slip_approved',
+        'Slip Approved',
+        `Your till slip for "${supplier.name}" was approved — R${result.rewardAmount?.toFixed(2)} reward earned.`,
+        { slip_id: slip.id }
+      );
     } else if (result.outcome === 'rejected') {
       await supabaseAdmin
         .from('reward_slips')
         .update({ status: 'rejected', rejected_reason: result.rejectReason })
         .eq('id', slip.id);
 
-      await supabaseAdmin.from('notifications').insert({
-        user_id: slip.tradie_id,
-        type: 'reward_slip_rejected',
-        title: 'Slip Rejected',
-        body: result.rejectReason ?? 'Your till slip was rejected.',
-        data: { slip_id: slip.id },
-        is_read: false,
-      });
+      await notifyUser(
+        slip.tradie_id,
+        'reward_slip_rejected',
+        'Slip Rejected',
+        result.rejectReason ?? 'Your till slip was rejected.',
+        { slip_id: slip.id }
+      );
     } else {
       await supabaseAdmin
         .from('reward_slips')
