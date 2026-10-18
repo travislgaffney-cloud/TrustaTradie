@@ -390,9 +390,12 @@ export async function completeJob(jobId: string, tradieId: string): Promise<void
 
   await markCompletedByProvider(txnBefore.id);
 
+  // completion_marked_at, not updated_at, is what the 72-hour payment
+  // release window reads — set once, here, so an unrelated row update can
+  // never accidentally shift the clock.
   const { error } = await supabase
     .from('jobs')
-    .update({ status: 'pending_completion' })
+    .update({ status: 'pending_completion', completion_marked_at: new Date().toISOString() })
     .eq('id', jobId);
 
   if (error) throw error;

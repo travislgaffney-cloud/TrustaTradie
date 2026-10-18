@@ -51,6 +51,7 @@ describe('getNotificationRoute (lib/notifications.ts)', () => {
       ['rating_received', {}, '/(tradie)/profile'],
       ['reward_slip_approved', {}, '/(tradie)/rewards/slips'],
       ['reward_slip_rejected', {}, '/(tradie)/rewards/slips'],
+      ['payment_release_decision', {}, '/(tradie)/earnings'],
     ] as const)('%s with %j routes to %s', (type, data, expected) => {
       expect(getNotificationRoute(type, data, 'tradie')).toBe(expected);
     });

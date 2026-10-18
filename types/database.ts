@@ -28,7 +28,9 @@ export type NotificationType =
   | 'site_visit_requested'
   | 'site_visit_completed'
   | 'reward_slip_approved'
-  | 'reward_slip_rejected';
+  | 'reward_slip_rejected'
+  | 'payment_release_requested'
+  | 'payment_release_decision';
 
 export type RewardSlipStatus = 'pending' | 'approved' | 'rejected';
 
@@ -159,6 +161,7 @@ export interface Job {
   accepted_quote_id: string | null;
   scheduled_at: string | null;
   completion_photo_url: string | null;
+  completion_marked_at: string | null;
   view_count: number;
   created_at: string;
   updated_at: string;
@@ -214,8 +217,24 @@ export interface Transaction {
   tradesafe_transaction_id: string | null;
   tradesafe_reference: string | null;
   tradesafe_allocation_id: string | null;
+  released_by_admin_id: string | null;
+  released_by_admin_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type PaymentReleaseStatus = 'pending' | 'released' | 'declined';
+
+export interface PaymentReleaseRequest {
+  id: string;
+  job_id: string;
+  tradie_id: string;
+  requested_at: string;
+  status: PaymentReleaseStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  decision_note: string | null;
+  created_at: string;
 }
 
 export interface TransactionStatusHistoryEntry {

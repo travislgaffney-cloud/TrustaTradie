@@ -170,6 +170,8 @@ export function getNotificationRoute(
     case 'reward_slip_approved':
     case 'reward_slip_rejected':
       return '/(tradie)/rewards/slips';
+    case 'payment_release_decision':
+      return '/(tradie)/earnings';
     default:
       return null;
   }

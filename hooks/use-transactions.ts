@@ -9,7 +9,12 @@ const ALLOWED_TRANSITIONS: Record<TransactionStatus, TransactionStatus[]> = {
   quoted: ['accepted', 'cancelled'],
   accepted: ['funds_held', 'cancelled'],
   funds_held: ['completed_by_provider', 'disputed', 'cancelled'],
-  completed_by_provider: ['confirmed_by_customer', 'disputed'],
+  // 'released' here is the admin-initiated 72-hour release path — it skips
+  // confirmed_by_customer entirely because the customer never actually
+  // confirmed; claiming otherwise would misrepresent
+  // transaction_status_history. The customer's own release button still
+  // goes through confirmed_by_customer as it does today.
+  completed_by_provider: ['confirmed_by_customer', 'disputed', 'released'],
   confirmed_by_customer: ['released', 'disputed'],
   released: [],
   disputed: ['funds_held', 'released', 'cancelled'],

@@ -46,6 +46,7 @@ export default function TermsOfServicePage() {
               <li>When you accept a quote, you agree to pay the full quoted amount, which is held securely in escrow via our payment partner, TradeSafe, until you confirm the job is complete.</li>
               <li>You are responsible for reviewing the completed work before releasing payment. Once you release payment, it is paid out to the tradie and cannot be automatically reversed.</li>
               <li>If you are unhappy with completed work, you may raise a dispute instead of releasing payment, which freezes the funds while our team investigates.</li>
+              <li>If you do not confirm completion or raise a dispute within 72 hours of the tradie marking the job as complete, the tradie may ask us to review the job and release payment on your behalf. We may do so at our discretion; any dispute you raise before we act will still be honoured and will pause the release.</li>
               <li>Trust-a-Tradie does not guarantee the quality, safety, or legality of any tradie&apos;s work.</li>
             </ul>
           </section>
@@ -80,6 +81,14 @@ export default function TermsOfServicePage() {
               releasing payment, which freezes the escrowed funds until our team reviews and resolves it. We may
               request information from both parties and make a final decision on releasing, withholding, or
               adjusting a disputed payment.
+            </p>
+            <p className="mt-3">
+              If a customer does not confirm a job as complete or raise a dispute within 72 hours of a tradie
+              marking the job complete, the tradie may submit a request asking us to release the payment. We
+              will review the job and may, at our sole discretion, release the escrowed payment to the tradie
+              without the customer&apos;s confirmation. If the customer raises a dispute at any point before we
+              act on such a request, the dispute will be honoured and the release will not proceed until it is
+              resolved.
             </p>
           </section>
 

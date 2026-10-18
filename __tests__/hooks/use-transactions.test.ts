@@ -43,6 +43,8 @@ describe('transaction state machine (hooks/use-transactions.ts)', () => {
     { label: 'funds_held -> completed_by_provider', currentStatus: 'funds_held', transitionFn: markCompletedByProvider, nextStatus: 'completed_by_provider' },
     { label: 'completed_by_provider -> confirmed_by_customer', currentStatus: 'completed_by_provider', transitionFn: markConfirmedByCustomer, nextStatus: 'confirmed_by_customer' },
     { label: 'confirmed_by_customer -> released', currentStatus: 'confirmed_by_customer', transitionFn: releaseFunds, nextStatus: 'released' },
+    // The admin 72-hour release path — skips confirmed_by_customer entirely.
+    { label: 'completed_by_provider -> released (admin release path)', currentStatus: 'completed_by_provider', transitionFn: releaseFunds, nextStatus: 'released' },
     { label: 'funds_held -> disputed', currentStatus: 'funds_held', transitionFn: raiseTransactionDispute, nextStatus: 'disputed' },
     { label: 'accepted -> cancelled', currentStatus: 'accepted', transitionFn: cancelTransaction, nextStatus: 'cancelled' },
   ] as const;

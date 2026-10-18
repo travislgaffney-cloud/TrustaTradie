@@ -6,6 +6,7 @@ export default function SettingsPage() {
   const [commissionPct, setCommissionPct] = useState<string>("");
   const [rewardThreshold, setRewardThreshold] = useState<string>("");
   const [rewardMaxAgeDays, setRewardMaxAgeDays] = useState<string>("");
+  const [paymentReleaseHours, setPaymentReleaseHours] = useState<string>("");
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -24,6 +25,9 @@ export default function SettingsPage() {
         }
         if (data.reward_slip_max_age_days != null) {
           setRewardMaxAgeDays(String(Number(data.reward_slip_max_age_days)));
+        }
+        if (data.payment_release_hours != null) {
+          setPaymentReleaseHours(String(Number(data.payment_release_hours)));
         }
         setLoading(false);
       });
@@ -46,6 +50,11 @@ export default function SettingsPage() {
       setMessage({ type: "error", text: "Enter a valid number of days (at least 1)." });
       return;
     }
+    const releaseHours = Number(paymentReleaseHours);
+    if (isNaN(releaseHours) || releaseHours < 1) {
+      setMessage({ type: "error", text: "Enter a valid number of hours (at least 1)." });
+      return;
+    }
 
     setSaving(true);
     const res = await fetch("/api/settings", {
@@ -55,6 +64,7 @@ export default function SettingsPage() {
         commissionPct: pct / 100,
         rewardAutoApproveThreshold: threshold,
         rewardSlipMaxAgeDays: maxAgeDays,
+        paymentReleaseHours: releaseHours,
       }),
     });
     setSaving(false);
@@ -134,6 +144,29 @@ export default function SettingsPage() {
               />
               <span className="text-sm text-gray-600">days</span>
             </div>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-4">
+        <h2 className="text-base font-semibold text-gray-900 mb-1">Payment Release Window</h2>
+        <p className="text-sm text-gray-500 mb-5">
+          How long a job can sit awaiting customer confirmation before a tradie may ask admin to review and release the payment.
+        </p>
+
+        {loading ? (
+          <p className="text-sm text-gray-400">Loading&hellip;</p>
+        ) : (
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={paymentReleaseHours}
+              onChange={(e) => setPaymentReleaseHours(e.target.value)}
+              className="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+            <span className="text-sm text-gray-600">hours</span>
           </div>
         )}
       </div>

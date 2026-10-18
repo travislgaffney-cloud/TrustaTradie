@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { JobStatusBadge } from '@/components/jobs/job-status-badge';
+import { PaymentReleaseRequestPanel } from '@/components/jobs/payment-release-request';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -80,11 +81,21 @@ export default function TradieActiveJobScreen() {
         )}
 
         {job.status === 'pending_completion' && (
-          <View style={[styles.waitingBox, { backgroundColor: '#fffbeb', borderColor: '#fcd34d' }]}>
-            <Text style={styles.waitingText}>
-              ⏳ Waiting for customer to confirm completion and release payment.
-            </Text>
-          </View>
+          <>
+            <View style={[styles.waitingBox, { backgroundColor: '#fffbeb', borderColor: '#fcd34d' }]}>
+              <Text style={styles.waitingText}>
+                ⏳ Waiting for customer to confirm completion and release payment.
+              </Text>
+            </View>
+            {user && (
+              <PaymentReleaseRequestPanel
+                jobId={jobId}
+                jobTitle={job.title}
+                tradieId={user.id}
+                completionMarkedAt={job.completion_marked_at}
+              />
+            )}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
