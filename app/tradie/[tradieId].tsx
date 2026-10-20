@@ -19,6 +19,8 @@ const DOC_ICONS: Record<string, string> = {
   licence:     '🪪',
   insurance:   '🛡️',
   certificate: '📜',
+  id_document: '🆔',
+  association: '🏅',
   other:       '📄',
 };
 
@@ -26,6 +28,8 @@ const DOC_LABELS: Record<string, string> = {
   licence:     'Licence',
   insurance:   'Insurance',
   certificate: 'Certificate',
+  id_document: 'ID Document',
+  association: 'Association Membership',
   other:       'Document',
 };
 
@@ -92,11 +96,15 @@ export default function PublicTradieProfileScreen() {
             <Text style={styles.backText}>← Back</Text>
           </Pressable>
           <View style={styles.headerBody}>
-            <Avatar uri={profile.avatar_url} name={profile.full_name} size={80} verified={tradieProfile?.is_verified} />
+            <Avatar uri={profile.avatar_url} name={profile.full_name} size={80} verified={tradieProfile?.gold_verified ? 'gold' : tradieProfile?.is_verified} />
             <View style={styles.headerInfo}>
               <View style={styles.nameRow}>
                 <Text style={styles.name}>{profile.full_name}</Text>
-                {tradieProfile?.is_verified && <Badge label="✓ Verified" variant="success" />}
+                {tradieProfile?.gold_verified ? (
+                  <Badge label="★ Gold Verified" variant="gold" />
+                ) : (
+                  tradieProfile?.is_verified && <Badge label="✓ Verified" variant="success" />
+                )}
               </View>
               {tradieProfile && <RatingStars rating={tradieProfile.average_rating} showNumber />}
               {tradieProfile && (

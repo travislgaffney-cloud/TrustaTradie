@@ -159,11 +159,15 @@ export default function TradiesNearMeScreen() {
               onPress={() => router.push(`/tradie/${tradie.id}`)}
             >
               <View style={styles.cardHeader}>
-                <Avatar uri={tradie.avatar_url} name={tradie.full_name} size={52} verified={tradie.is_verified} />
+                <Avatar uri={tradie.avatar_url} name={tradie.full_name} size={52} verified={tradie.gold_verified ? 'gold' : tradie.is_verified} />
                 <View style={styles.cardInfo}>
                   <View style={styles.nameRow}>
                     <Text style={[styles.name, { color: colors.text }]}>{tradie.full_name}</Text>
-                    {tradie.is_verified && <Badge label="✓" variant="success" />}
+                    {tradie.gold_verified ? (
+                      <Badge label="★" variant="gold" />
+                    ) : (
+                      tradie.is_verified && <Badge label="✓" variant="success" />
+                    )}
                   </View>
                   <RatingStars rating={tradie.average_rating} showNumber size={13} />
                   {tradie.suburb && (

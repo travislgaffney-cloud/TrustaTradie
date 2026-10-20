@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-type BadgeVariant = 'default' | 'success' | 'warning' | 'error' | 'info' | 'outline';
+type BadgeVariant = 'default' | 'success' | 'warning' | 'error' | 'info' | 'outline' | 'gold';
 
 interface BadgeProps {
   label: string;
@@ -15,6 +15,7 @@ const VARIANT_STYLES: Record<BadgeVariant, { bg: string; text: string }> = {
   error: { bg: '#fee2e2', text: '#991b1b' },
   info: { bg: '#dbeafe', text: '#1e40af' },
   outline: { bg: 'transparent', text: '#64748b' },
+  gold: { bg: '#fef3c7', text: '#92400e' },
 };
 
 export function Badge({ label, variant = 'default' }: BadgeProps) {

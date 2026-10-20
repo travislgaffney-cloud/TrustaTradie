@@ -10,7 +10,18 @@ async function getDocuments() {
     .order("is_verified", { ascending: true })
     .order("created_at", { ascending: false });
 
-  return data ?? [];
+  // The documents bucket is private (ID documents live here now) — url
+  // stores the bare storage path, so a signed URL is generated here,
+  // server-side, for admin review. Expiry just needs to outlast one
+  // review session.
+  const docs = data ?? [];
+  const signed = await Promise.all(
+    docs.map(async (doc: any) => {
+      const { data: signedData } = await supabase.storage.from("documents").createSignedUrl(doc.url, 600);
+      return { ...doc, url: signedData?.signedUrl ?? "" };
+    })
+  );
+  return signed;
 }
 
 export default async function DocumentsPage() {

@@ -59,6 +59,7 @@ export interface TownTradie {
   total_reviews: number;
   completed_jobs: number;
   is_verified: boolean;
+  gold_verified: boolean;
   hourly_rate: number | null;
 }
 
@@ -74,7 +75,7 @@ export function useTradiesByTown(town: string | null, category?: TradeCategory) 
     setLoading(true);
     let query = supabase
       .from('tradie_profiles')
-      .select('id, categories, average_rating, total_reviews, completed_jobs, is_verified, hourly_rate, profile:profiles!tradie_profiles_id_fkey(full_name, avatar_url, bio, suburb)')
+      .select('id, categories, average_rating, total_reviews, completed_jobs, is_verified, gold_verified, hourly_rate, profile:profiles!tradie_profiles_id_fkey(full_name, avatar_url, bio, suburb)')
       .order('average_rating', { ascending: false });
     if (town) query = query.contains('service_towns', [town]);
     if (category) query = query.contains('categories', [category]);
@@ -98,6 +99,7 @@ export function useTradiesByTown(town: string | null, category?: TradeCategory) 
       total_reviews: row.total_reviews ?? 0,
       completed_jobs: row.completed_jobs ?? 0,
       is_verified: row.is_verified ?? false,
+      gold_verified: row.gold_verified ?? false,
       hourly_rate: row.hourly_rate ?? null,
     }));
     setTradies(flattened);

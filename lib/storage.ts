@@ -1,8 +1,8 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from './supabase';
 
-type Bucket = 'avatars' | 'job-images' | 'portfolio' | 'documents' | 'chat-attachments' | 'completion-photos' | 'review-photos' | 'invoices';
-type PrivateBucket = 'reward-slips';
+type Bucket = 'avatars' | 'job-images' | 'portfolio' | 'chat-attachments' | 'completion-photos' | 'review-photos' | 'invoices';
+type PrivateBucket = 'reward-slips' | 'documents';
 
 export async function uploadFile(
   bucket: Bucket,

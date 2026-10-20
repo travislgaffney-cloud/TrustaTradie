@@ -99,7 +99,7 @@ export type TransactionStatus =
   | 'disputed'
   | 'cancelled';
 
-export type DocumentType = 'licence' | 'insurance' | 'certificate' | 'other';
+export type DocumentType = 'licence' | 'insurance' | 'certificate' | 'other' | 'id_document' | 'association';
 
 export type AttachmentType = 'image' | 'document' | 'pdf';
 
@@ -134,6 +134,7 @@ export interface TradieProfile {
   cipc_number: string | null;
   vat_number: string | null;
   is_verified: boolean;
+  gold_verified: boolean;
   average_rating: number;
   total_reviews: number;
   completed_jobs: number;

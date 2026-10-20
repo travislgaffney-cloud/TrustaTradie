@@ -7,7 +7,7 @@ export interface AvatarProps {
   name?: string | null;
   size?: number;
   color?: string;
-  verified?: boolean;
+  verified?: boolean | 'gold';
   style?: StyleProp<ViewStyle>;
 }
 
@@ -42,6 +42,8 @@ export function Avatar({ uri, name, size = 44, color = Brand.primary, verified, 
 
   if (!verified) return style ? <View style={style}>{avatar}</View> : avatar;
 
+  const isGold = verified === 'gold';
+
   return (
     <View style={[{ width: size, height: size }, style]}>
       {avatar}
@@ -51,8 +53,9 @@ export function Avatar({ uri, name, size = 44, color = Brand.primary, verified, 
         borderRadius: badgeSize / 2,
         right: -1,
         bottom: -1,
+        backgroundColor: isGold ? '#d97706' : '#2563eb',
       }]}>
-        <Text style={[styles.verifiedCheck, { fontSize: badgeSize * 0.6 }]}>✓</Text>
+        <Text style={[styles.verifiedCheck, { fontSize: badgeSize * 0.6 }]}>{isGold ? '★' : '✓'}</Text>
       </View>
     </View>
   );
@@ -67,7 +70,6 @@ const styles = StyleSheet.create({
   initials: { color: '#fff', fontWeight: '700' },
   verifiedBadge: {
     position: 'absolute',
-    backgroundColor: '#2563eb',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,

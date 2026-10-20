@@ -23,11 +23,24 @@ import { useAuthStore } from '@/store/auth-store';
 import type { TradieDocument } from '@/types/database';
 
 const DOC_ICONS: Record<string, string> = {
-  licence: '🪪', insurance: '🛡️', certificate: '📜', other: '📄',
+  licence: '🪪', insurance: '🛡️', certificate: '📜', id_document: '🆔', association: '🏅', other: '📄',
 };
 const DOC_LABELS: Record<string, string> = {
-  licence: 'Licence', insurance: 'Insurance', certificate: 'Certificate', other: 'Document',
+  licence: 'Licence', insurance: 'Insurance', certificate: 'Certificate', id_document: 'ID Document', association: 'Association Membership', other: 'Document',
 };
+
+function hasVerified(documents: TradieDocument[], type: string): boolean {
+  return documents.some((d) => d.type === type && d.is_verified);
+}
+
+function GoldRequirement({ label, done }: { label: string; done: boolean }) {
+  return (
+    <View style={styles.goldReqRow}>
+      <Text style={styles.goldReqIcon}>{done ? '✅' : '⬜️'}</Text>
+      <Text style={styles.goldReqLabel}>{label}</Text>
+    </View>
+  );
+}
 
 export default function TradieProfileScreen() {
   const scheme = useColorScheme() ?? 'light';
@@ -113,7 +126,7 @@ export default function TradieProfileScreen() {
         <View style={[styles.header, { backgroundColor: Brand.secondary }]}>
           <View style={styles.headerBody}>
             <Pressable onPress={handleAvatarChange} disabled={uploading} style={styles.avatarWrap}>
-              <Avatar uri={profile.avatar_url} name={profile.full_name} size={80} verified={tradieProfile?.is_verified} />
+              <Avatar uri={profile.avatar_url} name={profile.full_name} size={80} verified={tradieProfile?.gold_verified ? 'gold' : tradieProfile?.is_verified} />
               {uploading
                 ? <ActivityIndicator color="#fff" />
                 : <Text style={styles.photoLabel}>Change photo</Text>
@@ -122,7 +135,11 @@ export default function TradieProfileScreen() {
             <View style={styles.headerInfo}>
               <View style={styles.nameRow}>
                 <Text style={styles.name}>{profile.full_name}</Text>
-                {tradieProfile?.is_verified && <Badge label="✓ Verified" variant="success" />}
+                {tradieProfile?.gold_verified ? (
+                  <Badge label="★ Gold Verified" variant="gold" />
+                ) : (
+                  tradieProfile?.is_verified && <Badge label="✓ Verified" variant="success" />
+                )}
               </View>
               {tradieProfile && <RatingStars rating={tradieProfile.average_rating} showNumber />}
               {tradieProfile && (
@@ -192,9 +209,28 @@ export default function TradieProfileScreen() {
           )}
 
           {/* Qualifications & documents */}
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Qualifications & Documents</Text>
+
+          <Card style={styles.goldCard}>
+            <Text style={[styles.goldTitle, { color: colors.text }]}>
+              {tradieProfile?.gold_verified ? '★ Gold TT Badge — Earned' : '★ Earn the Gold TT Badge'}
+            </Text>
+            <Text style={[styles.goldDesc, { color: colors.textSecondary }]}>
+              Upload and get all three verified to show customers you&apos;re the highest level of verified on Trust-a-Tradie.
+            </Text>
+            <GoldRequirement label="Certified ID copy" done={hasVerified(documents, 'id_document')} />
+            <GoldRequirement label="Qualification certificate" done={hasVerified(documents, 'certificate')} />
+            <GoldRequirement label="Association membership" done={hasVerified(documents, 'association')} />
+            <Pressable
+              style={[styles.uploadDocsBtn, { borderColor: colors.border }]}
+              onPress={() => router.push('/(tradie)/profile/documents')}
+            >
+              <Text style={[styles.uploadDocsBtnText, { color: colors.tint }]}>📎 Manage My Documents</Text>
+            </Pressable>
+          </Card>
+
           {documents.length > 0 && (
             <>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Qualifications & Documents</Text>
               {documents.map((doc: TradieDocument) => (
                 <Card key={doc.id} style={styles.docCard}>
                   <View style={styles.docRow}>
@@ -316,6 +352,14 @@ const styles = StyleSheet.create({
   content: { padding: 16, gap: 14 },
   categories: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   bio: { fontSize: 15, lineHeight: 22 },
+  goldCard: { gap: 10, borderColor: '#fcd34d', borderWidth: 1, backgroundColor: '#fffbeb' },
+  goldTitle: { fontSize: 15, fontWeight: '700' },
+  goldDesc: { fontSize: 13, lineHeight: 18 },
+  goldReqRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  goldReqIcon: { fontSize: 14 },
+  goldReqLabel: { fontSize: 13, color: '#92400e' },
+  uploadDocsBtn: { borderWidth: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center', marginTop: 4 },
+  uploadDocsBtnText: { fontSize: 14, fontWeight: '600' },
   emptyHint: { alignItems: 'center', paddingVertical: 12 },
   emptyHintText: { fontSize: 13, textAlign: 'center' },
   statsCard: { gap: 10 },
