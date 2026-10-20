@@ -276,7 +276,9 @@ export interface Conversation {
   // joined fields
   job?: Job;
   customer?: Profile;
-  tradie?: Profile;
+  tradie?: Profile & {
+    tradie_profiles?: Pick<TradieProfile, 'is_verified' | 'gold_verified'> | Pick<TradieProfile, 'is_verified' | 'gold_verified'>[] | null;
+  };
   last_message?: Message;
   unread_count?: number;
 }

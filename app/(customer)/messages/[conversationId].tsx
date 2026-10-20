@@ -19,6 +19,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useMessages } from '@/hooks/use-messages';
+import { avatarVerifiedProp } from '@/lib/tradie-verification';
 import { useBookingProposals } from '@/hooks/use-calendar';
 import { useAuthStore } from '@/store/auth-store';
 import type { BookingProposal, LocalMessage } from '@/types/database';
@@ -69,7 +70,13 @@ export default function CustomerChatScreen() {
             <Text style={styles.backText}>← Back</Text>
           </Pressable>
           <View style={styles.headerCenter}>
-            <Avatar uri={other?.avatar_url} name={other?.full_name} size={36} color="#38BDF8" />
+            <Avatar
+              uri={other?.avatar_url}
+              name={other?.full_name}
+              size={36}
+              color="#38BDF8"
+              verified={avatarVerifiedProp(conversation?.tradie?.tradie_profiles)}
+            />
             <View>
               <Text style={styles.headerName} numberOfLines={1}>{other?.full_name ?? 'Chat'}</Text>
               {conversation?.job?.title && (

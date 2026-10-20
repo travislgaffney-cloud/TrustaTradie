@@ -72,7 +72,7 @@ export function useConversations() {
         *,
         job:jobs(id, title, category, status),
         customer:profiles!conversations_customer_id_fkey(id, full_name, avatar_url),
-        tradie:profiles!conversations_tradie_id_fkey(id, full_name, avatar_url)
+        tradie:profiles!conversations_tradie_id_fkey(id, full_name, avatar_url, tradie_profiles(is_verified, gold_verified))
       `)
       .or(`customer_id.eq.${user!.id},tradie_id.eq.${user!.id}`)
       .order('last_message_at', { ascending: false, nullsFirst: false });
@@ -151,7 +151,7 @@ export function useMessages(conversationId: string) {
         *,
         job:jobs(id, title),
         customer:profiles!conversations_customer_id_fkey(id, full_name, avatar_url),
-        tradie:profiles!conversations_tradie_id_fkey(id, full_name, avatar_url)
+        tradie:profiles!conversations_tradie_id_fkey(id, full_name, avatar_url, tradie_profiles(is_verified, gold_verified))
       `)
       .eq('id', conversationId)
       .single();

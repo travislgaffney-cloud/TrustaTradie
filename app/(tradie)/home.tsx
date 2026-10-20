@@ -135,7 +135,13 @@ export default function TradieHomeScreen() {
           </Text>
         </View>
         <Pressable onPress={() => router.push('/(tradie)/profile')}>
-          <Avatar uri={profile?.avatar_url} name={profile?.full_name} size={44} color="#38BDF8" />
+          <Avatar
+            uri={profile?.avatar_url}
+            name={profile?.full_name}
+            size={44}
+            color="#38BDF8"
+            verified={tradieProfile?.gold_verified ? 'gold' : tradieProfile?.is_verified}
+          />
         </Pressable>
       </View>
 

@@ -58,7 +58,7 @@ const JOB_STATUS_LABEL: Record<string, string> = {
 export default function MyQuotesAndJobsScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
-  const { profile, user } = useAuthStore();
+  const { profile, tradieProfile, user } = useAuthStore();
   const { quotes, loading: quotesLoading, refresh: refreshQuotes } = useMyQuotes();
   const { jobs, loading: jobsLoading, refresh: refreshJobs } = useMyTradieJobs();
   const { visits: siteVisits, loading: visitsLoading, refresh: refreshVisits } = useMySiteVisits();
@@ -385,7 +385,13 @@ export default function MyQuotesAndJobsScreen() {
             {totalCount} active item{totalCount !== 1 ? 's' : ''}
           </Text>
         </View>
-        <Avatar uri={profile?.avatar_url} name={profile?.full_name} size={40} color="#38BDF8" />
+        <Avatar
+          uri={profile?.avatar_url}
+          name={profile?.full_name}
+          size={40}
+          color="#38BDF8"
+          verified={tradieProfile?.gold_verified ? 'gold' : tradieProfile?.is_verified}
+        />
       </View>
 
       {loading && totalCount === 0 ? (

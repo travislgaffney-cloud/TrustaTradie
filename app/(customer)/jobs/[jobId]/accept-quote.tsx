@@ -88,7 +88,12 @@ export default function AcceptQuoteScreen() {
         {/* Tradie summary */}
         <Card elevated style={styles.tradieCard}>
           <View style={styles.tradieRow}>
-            <Avatar uri={quote.tradie?.avatar_url} name={quote.tradie?.full_name} size={56} />
+            <Avatar
+              uri={quote.tradie?.avatar_url}
+              name={quote.tradie?.full_name}
+              size={56}
+              verified={quote.tradie_profile?.gold_verified ? 'gold' : quote.tradie_profile?.is_verified}
+            />
             <View style={styles.tradieInfo}>
               <Text style={[styles.tradieName, { color: colors.text }]}>{quote.tradie?.full_name}</Text>
               {quote.tradie_profile && (

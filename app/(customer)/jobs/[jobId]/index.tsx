@@ -14,6 +14,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useJob } from '@/hooks/use-jobs';
 import { useJobQuotes } from '@/hooks/use-quotes';
 import { useJobSiteVisits, respondToSiteVisit } from '@/hooks/use-site-visits';
+import { avatarVerifiedProp } from '@/lib/tradie-verification';
 
 export default function CustomerJobDetailScreen() {
   const { jobId, from } = useLocalSearchParams<{ jobId: string; from?: string }>();
@@ -121,7 +122,12 @@ export default function CustomerJobDetailScreen() {
                 return (
                   <Card key={v.id} style={[styles.visitCard, { borderColor: '#fcd34d' }]}>
                     <View style={styles.visitRow}>
-                      <Avatar uri={v.tradie?.avatar_url} name={v.tradie?.full_name} size={36} />
+                      <Avatar
+                        uri={v.tradie?.avatar_url}
+                        name={v.tradie?.full_name}
+                        size={36}
+                        verified={avatarVerifiedProp(v.tradie?.tradie_profiles)}
+                      />
                       <View style={styles.visitInfo}>
                         <Text style={[styles.visitName, { color: colors.text }]}>
                           {v.tradie?.full_name ?? 'Tradie'}
@@ -164,7 +170,12 @@ export default function CustomerJobDetailScreen() {
                 return (
                   <Card key={v.id} style={[styles.visitCard, { borderColor: '#fcd34d' }]}>
                     <View style={styles.visitRow}>
-                      <Avatar uri={v.tradie?.avatar_url} name={v.tradie?.full_name} size={36} />
+                      <Avatar
+                        uri={v.tradie?.avatar_url}
+                        name={v.tradie?.full_name}
+                        size={36}
+                        verified={avatarVerifiedProp(v.tradie?.tradie_profiles)}
+                      />
                       <View style={styles.visitInfo}>
                         <Text style={[styles.visitName, { color: colors.text }]}>
                           {v.tradie?.full_name ?? 'Tradie'}
@@ -194,7 +205,12 @@ export default function CustomerJobDetailScreen() {
                 return (
                   <Card key={v.id} style={[styles.visitCard, { borderColor: '#93c5fd' }]}>
                     <View style={styles.visitRow}>
-                      <Avatar uri={v.tradie?.avatar_url} name={v.tradie?.full_name} size={36} />
+                      <Avatar
+                        uri={v.tradie?.avatar_url}
+                        name={v.tradie?.full_name}
+                        size={36}
+                        verified={avatarVerifiedProp(v.tradie?.tradie_profiles)}
+                      />
                       <View style={styles.visitInfo}>
                         <Text style={[styles.visitName, { color: colors.text }]}>
                           {v.tradie?.full_name ?? 'Tradie'}

@@ -94,7 +94,12 @@ export default function QuoteDetailScreen() {
             style={styles.tradieRow}
             onPress={() => router.push(`/tradie/${quote.tradie_id}` as never)}
           >
-            <Avatar uri={quote.tradie?.avatar_url} name={quote.tradie?.full_name} size={52} />
+            <Avatar
+              uri={quote.tradie?.avatar_url}
+              name={quote.tradie?.full_name}
+              size={52}
+              verified={quote.tradie_profile?.gold_verified ? 'gold' : quote.tradie_profile?.is_verified}
+            />
             <View style={styles.tradieInfo}>
               <Text style={[styles.tradieName, { color: colors.text }]}>
                 {quote.tradie?.full_name ?? 'Unknown Tradie'}

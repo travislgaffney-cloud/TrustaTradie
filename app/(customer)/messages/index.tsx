@@ -9,6 +9,7 @@ import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useConversations } from '@/hooks/use-messages';
 import { useAuthStore } from '@/store/auth-store';
+import { avatarVerifiedProp } from '@/lib/tradie-verification';
 
 export default function CustomerMessagesScreen() {
   const scheme = useColorScheme() ?? 'light';
@@ -51,7 +52,12 @@ export default function CustomerMessagesScreen() {
                 onPress={() => router.push(`/(customer)/messages/${item.id}`)}
                 style={[styles.item, { borderBottomColor: colors.border }]}
               >
-                <Avatar uri={other?.avatar_url} name={other?.full_name} size={48} />
+                <Avatar
+                  uri={other?.avatar_url}
+                  name={other?.full_name}
+                  size={48}
+                  verified={avatarVerifiedProp(item.tradie?.tradie_profiles)}
+                />
                 <View style={styles.itemInfo}>
                   <Text style={[styles.name, { color: colors.text }]}>{other?.full_name}</Text>
                   <Text style={[styles.jobTitle, { color: colors.textSecondary }]} numberOfLines={1}>

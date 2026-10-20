@@ -32,7 +32,12 @@ export function QuoteCard({ quote, onAccept, onViewProfile, onPress, isAccepted 
     <Card elevated style={styles.card}>
       <View style={styles.header}>
         <Pressable onPress={onViewProfile} style={styles.tradie}>
-          <Avatar uri={quote.tradie?.avatar_url} name={quote.tradie?.full_name} size={48} />
+          <Avatar
+            uri={quote.tradie?.avatar_url}
+            name={quote.tradie?.full_name}
+            size={48}
+            verified={quote.tradie_profile?.gold_verified ? 'gold' : quote.tradie_profile?.is_verified}
+          />
           <View style={styles.tradieInfo}>
             <Text style={[styles.tradieName, { color: colors.text }]}>
               {quote.tradie?.full_name ?? 'Unknown Tradie'}

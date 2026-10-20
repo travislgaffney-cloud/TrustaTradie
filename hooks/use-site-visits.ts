@@ -4,6 +4,7 @@ import { notifyUser } from '@/lib/notifications';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useAuthStore } from '@/store/auth-store';
 import type { Job } from '@/types/database';
+import type { TradieVerificationFields } from '@/lib/tradie-verification';
 
 export type SiteVisitStatus = 'proposed' | 'confirmed' | 'completed' | 'cancelled';
 export type ProposedBy = 'tradie' | 'customer';
@@ -18,7 +19,11 @@ export interface SiteVisit {
   proposed_by: ProposedBy;
   created_at: string;
   updated_at: string;
-  tradie?: { full_name: string; avatar_url: string | null };
+  tradie?: {
+    full_name: string;
+    avatar_url: string | null;
+    tradie_profiles?: TradieVerificationFields | TradieVerificationFields[] | null;
+  };
   customer?: { full_name: string };
   job?: Job;
 }
@@ -117,7 +122,7 @@ export function useJobSiteVisits(jobId: string) {
     setLoading(true);
     const { data } = await supabase
       .from('site_visits')
-      .select('*, tradie:profiles!site_visits_tradie_id_fkey(full_name, avatar_url)')
+      .select('*, tradie:profiles!site_visits_tradie_id_fkey(full_name, avatar_url, tradie_profiles(is_verified, gold_verified))')
       .eq('job_id', jobId)
       .order('created_at', { ascending: false });
     setVisits((data as SiteVisit[]) ?? []);
