@@ -44,6 +44,9 @@ export function Avatar({ uri, name, size = 44, color = Brand.primary, verified, 
 
   const isGold = verified === 'gold';
 
+  // Gold sits top-left, deliberately apart from the plain blue checkmark's
+  // bottom-right spot — the highest tier reads as a distinct badge, not a
+  // recolored version of the same indicator.
   return (
     <View style={[{ width: size, height: size }, style]}>
       {avatar}
@@ -51,9 +54,8 @@ export function Avatar({ uri, name, size = 44, color = Brand.primary, verified, 
         width: badgeSize,
         height: badgeSize,
         borderRadius: badgeSize / 2,
-        right: -1,
-        bottom: -1,
         backgroundColor: isGold ? '#d97706' : '#2563eb',
+        ...(isGold ? { left: -1, top: -1 } : { right: -1, bottom: -1 }),
       }]}>
         <Text style={[styles.verifiedCheck, { fontSize: badgeSize * 0.6 }]}>{isGold ? '★' : '✓'}</Text>
       </View>
