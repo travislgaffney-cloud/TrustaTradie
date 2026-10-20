@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -10,7 +10,21 @@ import { TRADE_CATEGORIES } from '@/constants/trade-categories';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePortfolioImages, useTradieRatings } from '@/hooks/use-tradie-profile';
 import { supabase } from '@/lib/supabase';
-import type { Profile, TradieProfile, TradieDocument } from '@/types/database';
+import type { Profile, TradieProfile } from '@/types/database';
+
+// Deliberately excludes url — this page is public, and the documents
+// table's url column is a private storage path that should never reach an
+// unauthenticated client even as inert metadata (see public_tradie_documents,
+// migration 054).
+interface PublicDocument {
+  id: string;
+  tradie_id: string;
+  type: string;
+  label: string;
+  expiry_date: string | null;
+  is_verified: boolean;
+  created_at: string;
+}
 import { PortfolioGrid } from '@/components/tradie/portfolio-grid';
 import { RatingStars } from '@/components/tradie/rating-stars';
 import { ReviewCard } from '@/components/tradie/review-card';
@@ -33,13 +47,24 @@ const DOC_LABELS: Record<string, string> = {
   other:       'Document',
 };
 
+function showGoldExplanation() {
+  Alert.alert(
+    '★ Gold TT Badge',
+    'This tradie has submitted a certified ID, a qualification certificate, and proof of association membership — each independently reviewed and authenticated by Trust-a-Tradie admin, not just self-declared. This is the highest level of verification on Trust-a-Tradie.'
+  );
+}
+
+function showVerifiedExplanation() {
+  Alert.alert('✓ Verified', 'Trust-a-Tradie admin has verified this tradie’s identity.');
+}
+
 export default function PublicTradieProfileScreen() {
   const { tradieId } = useLocalSearchParams<{ tradieId: string }>();
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const [profile, setProfile] = useState<Profile | null>(null);
   const [tradieProfile, setTradieProfile] = useState<TradieProfile | null>(null);
-  const [documents, setDocuments] = useState<TradieDocument[]>([]);
+  const [documents, setDocuments] = useState<PublicDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const { images } = usePortfolioImages(tradieId);
   const { ratings } = useTradieRatings(tradieId);
@@ -49,13 +74,13 @@ export default function PublicTradieProfileScreen() {
     Promise.all([
       supabase.from('profiles').select('*').eq('id', tradieId).maybeSingle<Profile>(),
       supabase.from('tradie_profiles').select('*').eq('id', tradieId).maybeSingle<TradieProfile>(),
-      supabase.from('tradie_documents').select('*').eq('tradie_id', tradieId).order('created_at', { ascending: false }),
+      supabase.from('public_tradie_documents').select('*').eq('tradie_id', tradieId).order('created_at', { ascending: false }),
     ]).then(([{ data: p, error: e1 }, { data: tp, error: e2 }, { data: docs }]) => {
       if (e1) console.error('[TradieProfile] profiles:', e1.message);
       if (e2) console.error('[TradieProfile] tradie_profiles:', e2.message);
       setProfile(p ?? null);
       setTradieProfile(tp ?? null);
-      setDocuments((docs as TradieDocument[]) ?? []);
+      setDocuments((docs as PublicDocument[]) ?? []);
       setLoading(false);
     });
   }, [tradieId]);
@@ -101,9 +126,15 @@ export default function PublicTradieProfileScreen() {
               <View style={styles.nameRow}>
                 <Text style={styles.name}>{profile.full_name}</Text>
                 {tradieProfile?.gold_verified ? (
-                  <Badge label="★ Gold Verified" variant="gold" />
+                  <Pressable onPress={showGoldExplanation}>
+                    <Badge label="★ Gold Verified ⓘ" variant="gold" />
+                  </Pressable>
                 ) : (
-                  tradieProfile?.is_verified && <Badge label="✓ Verified" variant="success" />
+                  tradieProfile?.is_verified && (
+                    <Pressable onPress={showVerifiedExplanation}>
+                      <Badge label="✓ Verified ⓘ" variant="success" />
+                    </Pressable>
+                  )
                 )}
               </View>
               {tradieProfile && <RatingStars rating={tradieProfile.average_rating} showNumber />}

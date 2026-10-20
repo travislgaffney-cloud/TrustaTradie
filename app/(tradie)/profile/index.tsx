@@ -216,7 +216,9 @@ export default function TradieProfileScreen() {
               {tradieProfile?.gold_verified ? '★ Gold TT Badge — Earned' : '★ Earn the Gold TT Badge'}
             </Text>
             <Text style={[styles.goldDesc, { color: colors.textSecondary }]}>
-              Upload and get all three verified to show customers you&apos;re the highest level of verified on Trust-a-Tradie.
+              {tradieProfile?.gold_verified
+                ? 'All three of your documents have been submitted and authenticated by Trust-a-Tradie admin. Customers see this as the highest level of verified.'
+                : 'Upload all three below. Once admin authenticates each one, customers will see you as the highest level of verified.'}
             </Text>
             <GoldRequirement label="Certified ID copy" done={hasVerified(documents, 'id_document')} />
             <GoldRequirement label="Qualification certificate" done={hasVerified(documents, 'certificate')} />
