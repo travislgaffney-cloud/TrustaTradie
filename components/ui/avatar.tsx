@@ -57,7 +57,7 @@ export function Avatar({ uri, name, size = 44, color = Brand.primary, verified, 
         backgroundColor: isGold ? '#d97706' : '#2563eb',
         ...(isGold ? { left: -1, top: -1 } : { right: -1, bottom: -1 }),
       }]}>
-        <Text style={[styles.verifiedCheck, { fontSize: badgeSize * 0.6 }]}>{isGold ? '★' : '✓'}</Text>
+        <Text style={[styles.verifiedCheck, { fontSize: badgeSize * 0.6, lineHeight: badgeSize * 0.6 }]}>{isGold ? '★' : '✓'}</Text>
       </View>
     </View>
   );
@@ -80,6 +80,5 @@ const styles = StyleSheet.create({
   verifiedCheck: {
     color: '#fff',
     fontWeight: '800',
-    lineHeight: 14,
   },
 });
