@@ -2,7 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from './supabase';
 
 type Bucket = 'avatars' | 'job-images' | 'portfolio' | 'chat-attachments' | 'completion-photos' | 'review-photos' | 'invoices';
-type PrivateBucket = 'reward-slips' | 'documents';
+type PrivateBucket = 'reward-slips' | 'documents' | 'dispute-evidence';
 
 export async function uploadFile(
   bucket: Bucket,

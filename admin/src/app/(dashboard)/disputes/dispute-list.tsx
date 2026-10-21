@@ -31,6 +31,14 @@ interface DisputeNote {
   admin: { full_name: string } | null;
 }
 
+interface DisputeReport {
+  id: string;
+  job_id: string;
+  reason: string;
+  created_at: string;
+  photoUrls: string[];
+}
+
 const ACTION_OPTIONS = [
   { value: "note_only", label: "Add Note Only" },
   { value: "reverted_to_in_progress", label: "Revert to In Progress" },
@@ -41,9 +49,11 @@ const ACTION_OPTIONS = [
 export function DisputeList({
   jobs: initial,
   notes: initialNotes,
+  reports,
 }: {
   jobs: DisputedJob[];
   notes: DisputeNote[];
+  reports: DisputeReport[];
 }) {
   const [jobs, setJobs] = useState(initial);
   const [notes, setNotes] = useState(initialNotes);
@@ -51,6 +61,7 @@ export function DisputeList({
   const [loading, setLoading] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
   const [action, setAction] = useState("note_only");
+  const [preview, setPreview] = useState<string | null>(null);
 
   async function handleSubmit(jobId: string) {
     if (!noteText.trim()) return alert("Please add a note.");
@@ -82,6 +93,7 @@ export function DisputeList({
       {jobs.map((job) => {
         const quote = job.quotes[0];
         const jobNotes = notes.filter((n) => n.job_id === job.id);
+        const jobReports = reports.filter((r) => r.job_id === job.id);
         const isExpanded = expanded === job.id;
 
         return (
@@ -111,6 +123,34 @@ export function DisputeList({
 
             {isExpanded && (
               <div className="border-t border-gray-100 p-4 space-y-4">
+                {/* Customer's own report — this is what the customer said when raising it */}
+                {jobReports.length > 0 && (
+                  <div className="bg-red-50 border border-red-100 rounded-lg p-3">
+                    <p className="text-xs font-medium text-red-600 mb-1">Customer&apos;s Reported Reason</p>
+                    {jobReports.map((r) => (
+                      <div key={r.id} className="mb-2 last:mb-0">
+                        <p className="text-sm text-gray-800 whitespace-pre-wrap">{r.reason}</p>
+                        {r.photoUrls.length > 0 && (
+                          <div className="flex gap-2 mt-2 flex-wrap">
+                            {r.photoUrls.map((url) => (
+                              <button
+                                key={url}
+                                onClick={() => setPreview(url)}
+                                className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:opacity-80 transition shrink-0"
+                              >
+                                <img src={url} alt="Dispute evidence" className="w-full h-full object-cover" />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-400 mt-1">
+                          Reported {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Parties */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-blue-50 rounded-lg p-3">
@@ -191,6 +231,15 @@ export function DisputeList({
           </div>
         );
       })}
+
+      {preview && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-8"
+          onClick={() => setPreview(null)}
+        >
+          <img src={preview} alt="Dispute evidence" className="max-w-full max-h-[80vh] rounded" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
     </div>
   );
 }

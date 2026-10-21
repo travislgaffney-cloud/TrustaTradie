@@ -144,6 +144,15 @@ export interface TradieProfile {
   facebook_url: string | null;
 }
 
+export interface DisputeReport {
+  id: string;
+  job_id: string;
+  customer_id: string;
+  reason: string;
+  photo_paths: string[];
+  created_at: string;
+}
+
 export interface Job {
   id: string;
   customer_id: string;

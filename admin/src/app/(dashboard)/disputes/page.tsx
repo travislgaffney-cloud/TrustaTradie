@@ -32,8 +32,30 @@ async function getDisputeNotes() {
   return data ?? [];
 }
 
+async function getDisputeReports() {
+  const { data } = await supabase
+    .from("dispute_reports")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  // dispute-evidence is a private bucket — signed here, server-side, same
+  // pattern as the documents and reward-slips review pages.
+  const reports = data ?? [];
+  return Promise.all(
+    reports.map(async (r) => {
+      const photoUrls = await Promise.all(
+        (r.photo_paths as string[]).map(async (path) => {
+          const { data: signed } = await supabase.storage.from("dispute-evidence").createSignedUrl(path, 600);
+          return signed?.signedUrl ?? null;
+        })
+      );
+      return { ...r, photoUrls: photoUrls.filter((u): u is string => u !== null) };
+    })
+  );
+}
+
 export default async function DisputesPage() {
-  const [jobs, notes] = await Promise.all([getDisputedJobs(), getDisputeNotes()]);
+  const [jobs, notes, reports] = await Promise.all([getDisputedJobs(), getDisputeNotes(), getDisputeReports()]);
 
   return (
     <div>
@@ -54,7 +76,7 @@ export default async function DisputesPage() {
         </div>
       )}
 
-      <DisputeList jobs={jobs} notes={notes} />
+      <DisputeList jobs={jobs} notes={notes} reports={reports} />
     </div>
   );
 }

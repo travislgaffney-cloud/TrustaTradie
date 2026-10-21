@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EscrowTimeline } from '@/components/payments/escrow-timeline';
+import { DisputeReportModal } from '@/components/jobs/dispute-report-modal';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -9,6 +10,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { supabase } from '@/lib/supabase';
+import { uploadPrivateFile } from '@/lib/storage';
 import { notifyUser } from '@/lib/notifications';
 import { extractFunctionErrorMessage } from '@/lib/edge-function-error';
 import { markConfirmedByCustomer, releaseFunds, raiseTransactionDispute } from '@/hooks/use-transactions';
@@ -28,6 +30,7 @@ export default function PaymentDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [releasing, setReleasing] = useState(false);
   const [disputing, setDisputing] = useState(false);
+  const [disputeModalVisible, setDisputeModalVisible] = useState(false);
   const [invoiceBusy, setInvoiceBusy] = useState<'view' | 'print' | null>(null);
   const { invoice } = useInvoice(txn?.id ?? '');
 
@@ -129,64 +132,73 @@ export default function PaymentDetailScreen() {
 
   function handleDispute() {
     if (!txn) return;
-    Alert.alert(
-      'Raise a Dispute',
-      'Are you unsatisfied with the work? This will freeze the payment and notify our admin team to investigate.\n\nPlease only dispute if there is a genuine issue.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Raise Dispute',
-          style: 'destructive',
-          onPress: async () => {
-            setDisputing(true);
-            try {
-              if (txn.tradesafe_allocation_id) {
-                const { data, error } = await supabase.functions.invoke('tradesafe-allocation-action', {
-                  body: { jobId, action: 'dispute', comment: 'Customer raised a dispute via the Trust-a-Tradie app.' },
-                });
-                if (error || data?.error) {
-                  throw new Error(await extractFunctionErrorMessage(error, data?.error ?? 'Could not raise dispute via TradeSafe'));
-                }
-              }
+    setDisputeModalVisible(true);
+  }
 
-              await raiseTransactionDispute(txn.id);
-              await supabase.from('jobs').update({ status: 'disputed' }).eq('id', jobId);
+  async function submitDispute(reason: string, photoUris: string[]) {
+    if (!txn || !profile) return;
+    setDisputing(true);
+    try {
+      if (txn.tradesafe_allocation_id) {
+        const { data, error } = await supabase.functions.invoke('tradesafe-allocation-action', {
+          body: { jobId, action: 'dispute', comment: 'Customer raised a dispute via the Trust-a-Tradie app.' },
+        });
+        if (error || data?.error) {
+          throw new Error(await extractFunctionErrorMessage(error, data?.error ?? 'Could not raise dispute via TradeSafe'));
+        }
+      }
 
-              const { data: admins } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('role', 'admin');
-              const body = `A customer has raised a dispute for job "${txn.job?.title ?? 'a job'}" — R${txn.quoted_amount.toLocaleString()} held in escrow`;
-              for (const admin of admins ?? []) {
-                await notifyUser({
-                  userId: admin.id,
-                  type: 'job_completed',
-                  title: '⚖️ Dispute Raised',
-                  body,
-                  data: { job_id: jobId },
-                });
-              }
+      // Uploaded before the dispute_reports insert so a failed upload never
+      // leaves a report row pointing at photos that don't exist.
+      const photoPaths: string[] = [];
+      for (const uri of photoUris) {
+        const ext = uri.split('.').pop() ?? 'jpg';
+        const path = `${jobId}/${Date.now()}_${photoPaths.length}.${ext}`;
+        const storedPath = await uploadPrivateFile('dispute-evidence', path, uri, `image/${ext}`);
+        photoPaths.push(storedPath);
+      }
 
-              const tradieBody = `The customer has raised a dispute for "${txn.job?.title ?? 'a job'}". Payment is on hold while our team investigates.`;
-              await notifyUser({
-                userId: txn.tradie_id,
-                type: 'job_completed',
-                title: 'Dispute Raised',
-                body: tradieBody,
-                data: { job_id: jobId },
-              });
+      await supabase.from('dispute_reports').insert({
+        job_id: jobId,
+        customer_id: profile.id,
+        reason,
+        photo_paths: photoPaths,
+      });
 
-              await load();
-              Alert.alert('Dispute Raised', 'Our team has been notified and will investigate. The payment remains frozen until resolved.');
-            } catch (err) {
-              Alert.alert('Error', err instanceof Error ? err.message : 'Could not raise dispute. Please try again.');
-            } finally {
-              setDisputing(false);
-            }
-          },
-        },
-      ]
-    );
+      await raiseTransactionDispute(txn.id);
+      await supabase.from('jobs').update({ status: 'disputed' }).eq('id', jobId);
+
+      // Real admins table, not profiles.role — the same inconsistency
+      // already fixed for the payment-release feature.
+      const { data: admins } = await supabase.from('admins').select('user_id');
+      const body = `A customer has raised a dispute for job "${txn.job?.title ?? 'a job'}" — R${txn.quoted_amount.toLocaleString()} held in escrow. Reason: ${reason}`;
+      for (const admin of admins ?? []) {
+        await notifyUser({
+          userId: admin.user_id,
+          type: 'job_completed',
+          title: '⚖️ Dispute Raised',
+          body,
+          data: { job_id: jobId },
+        });
+      }
+
+      const tradieBody = `The customer has raised a dispute for "${txn.job?.title ?? 'a job'}". Payment is on hold while our team investigates.`;
+      await notifyUser({
+        userId: txn.tradie_id,
+        type: 'job_completed',
+        title: 'Dispute Raised',
+        body: tradieBody,
+        data: { job_id: jobId },
+      });
+
+      setDisputeModalVisible(false);
+      await load();
+      Alert.alert('Dispute Raised', 'Our team has been notified and will investigate. The payment remains frozen until resolved.');
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Could not raise dispute. Please try again.');
+    } finally {
+      setDisputing(false);
+    }
   }
 
   if (loading) return <LoadingSpinner full />;
@@ -327,6 +339,13 @@ export default function PaymentDetailScreen() {
           </Card>
         )}
       </ScrollView>
+
+      <DisputeReportModal
+        visible={disputeModalVisible}
+        submitting={disputing}
+        onClose={() => setDisputeModalVisible(false)}
+        onSubmit={submitDispute}
+      />
     </SafeAreaView>
   );
 }
