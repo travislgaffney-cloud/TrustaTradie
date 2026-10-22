@@ -169,12 +169,16 @@ export default function PaymentDetailScreen() {
       await supabase.from('jobs').update({ status: 'disputed' }).eq('id', jobId);
 
       // Real admins table, not profiles.role — the same inconsistency
-      // already fixed for the payment-release feature.
-      const { data: admins } = await supabase.from('admins').select('user_id');
+      // already fixed for the payment-release feature. Goes through the
+      // admin_user_ids() RPC rather than selecting from admins directly:
+      // that table is admin-read-only under RLS, so a direct select here
+      // (the caller is a customer) always came back empty and this never
+      // actually notified anyone.
+      const { data: adminIds } = await supabase.rpc('admin_user_ids');
       const body = `A customer has raised a dispute for job "${txn.job?.title ?? 'a job'}" — R${txn.quoted_amount.toLocaleString()} held in escrow. Reason: ${reason}`;
-      for (const admin of admins ?? []) {
+      for (const id of adminIds ?? []) {
         await notifyUser({
-          userId: admin.user_id,
+          userId: id,
           type: 'job_completed',
           title: '⚖️ Dispute Raised',
           body,

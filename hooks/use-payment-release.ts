@@ -29,14 +29,18 @@ export async function getActiveReleaseRequest(jobId: string): Promise<PaymentRel
 
 // Notifies every real admin (the `admins` table — not profiles.role, which
 // the existing dispute-raise flow uses and which this plan deliberately
-// doesn't repeat) that a release request needs review.
+// doesn't repeat) that a release request needs review. Goes through the
+// admin_user_ids() RPC rather than selecting from admins directly: that
+// table is admin-read-only under RLS, so a direct select here (the caller
+// is a tradie) always came back empty and this never actually notified
+// anyone.
 async function notifyAdmins(jobId: string, jobTitle: string): Promise<void> {
-  const { data: admins } = await supabase.from('admins').select('user_id');
+  const { data: adminIds } = await supabase.rpc('admin_user_ids');
   const body = `A tradie has requested payment release for "${jobTitle}" — the customer hasn't confirmed or disputed within the review window.`;
   await Promise.all(
-    (admins ?? []).map((a) =>
+    (adminIds ?? []).map((id: string) =>
       notifyUser({
-        userId: a.user_id,
+        userId: id,
         type: 'payment_release_requested',
         title: 'Payment Release Requested',
         body,

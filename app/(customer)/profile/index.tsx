@@ -5,11 +5,13 @@ import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } fr
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ContactUsModal } from '@/components/contact-us-modal';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { supabase } from '@/lib/supabase';
 import { uploadFile } from '@/lib/storage';
 import { submitBugReport } from '@/lib/bug-report';
+import { submitContactMessage } from '@/lib/contact';
 import { deleteAccount } from '@/lib/account';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -19,6 +21,20 @@ export default function CustomerProfileScreen() {
   const { profile, setProfile } = useAuthStore();
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [contactVisible, setContactVisible] = useState(false);
+  const [contactSubmitting, setContactSubmitting] = useState(false);
+
+  async function handleSubmitContact(firstName: string, lastName: string, email: string, message: string) {
+    setContactSubmitting(true);
+    try {
+      await submitContactMessage({ firstName, lastName, email, message });
+      setContactVisible(false);
+      Alert.alert('Message sent', 'Thanks for reaching out — we\'ll get back to you soon.');
+    } catch {
+      Alert.alert('Error', 'Could not send your message. Please try again.');
+    }
+    setContactSubmitting(false);
+  }
 
   async function handleAvatarChange() {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -130,6 +146,13 @@ export default function CustomerProfileScreen() {
           <Text style={[styles.bugBtnText, { color: colors.textSecondary }]}>🐛 Report a Bug</Text>
         </Pressable>
 
+        <Pressable
+          style={[styles.bugBtn, { borderColor: colors.border }]}
+          onPress={() => setContactVisible(true)}
+        >
+          <Text style={[styles.bugBtnText, { color: colors.textSecondary }]}>✉️ Contact Us</Text>
+        </Pressable>
+
         <Button variant="danger" onPress={handleSignOut}>Sign Out</Button>
 
         <Pressable onPress={handleDeleteAccount} disabled={deleting} style={styles.deleteAccountBtn}>
@@ -138,6 +161,15 @@ export default function CustomerProfileScreen() {
           </Text>
         </Pressable>
       </ScrollView>
+
+      <ContactUsModal
+        visible={contactVisible}
+        submitting={contactSubmitting}
+        initialFirstName={profile.full_name?.split(' ')[0] ?? ''}
+        initialLastName={profile.full_name?.split(' ').slice(1).join(' ') ?? ''}
+        onClose={() => setContactVisible(false)}
+        onSubmit={handleSubmitContact}
+      />
     </SafeAreaView>
   );
 }

@@ -153,6 +153,17 @@ export interface DisputeReport {
   created_at: string;
 }
 
+export interface ContactMessage {
+  id: string;
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  message: string;
+  responded: boolean;
+  created_at: string;
+}
+
 export interface Job {
   id: string;
   customer_id: string;

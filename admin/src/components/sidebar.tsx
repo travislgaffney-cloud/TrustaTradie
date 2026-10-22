@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/rewards/reports", label: "Reward Reports", icon: "📊" },
   { href: "/rewards/suppliers", label: "Supplier Rewards", icon: "🎁" },
   { href: "/bug-reports", label: "Bug Reports", icon: "🐛" },
+  { href: "/contact-messages", label: "Contact Messages", icon: "✉️" },
   { href: "/reports", label: "Reports", icon: "🧾" },
   { href: "/settings", label: "Settings", icon: "⚙️" },
 ];

@@ -8,6 +8,7 @@ import {
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { ContactUsModal } from '@/components/contact-us-modal';
 import { PortfolioGrid } from '@/components/tradie/portfolio-grid';
 import { RatingStars } from '@/components/tradie/rating-stars';
 import { ReviewCard } from '@/components/tradie/review-card';
@@ -18,6 +19,7 @@ import { useTradieDocuments, usePortfolioImages, useTradieRatings } from '@/hook
 import { supabase } from '@/lib/supabase';
 import { uploadFile } from '@/lib/storage';
 import { submitBugReport } from '@/lib/bug-report';
+import { submitContactMessage } from '@/lib/contact';
 import { deleteAccount } from '@/lib/account';
 import { useAuthStore } from '@/store/auth-store';
 import type { TradieDocument } from '@/types/database';
@@ -48,10 +50,24 @@ export default function TradieProfileScreen() {
   const { profile, tradieProfile, setProfile } = useAuthStore();
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [contactVisible, setContactVisible] = useState(false);
+  const [contactSubmitting, setContactSubmitting] = useState(false);
 
   const { documents } = useTradieDocuments();
   const { images } = usePortfolioImages();
   const { ratings } = useTradieRatings(profile?.id ?? '');
+
+  async function handleSubmitContact(firstName: string, lastName: string, email: string, message: string) {
+    setContactSubmitting(true);
+    try {
+      await submitContactMessage({ firstName, lastName, email, message });
+      setContactVisible(false);
+      Alert.alert('Message sent', 'Thanks for reaching out — we\'ll get back to you soon.');
+    } catch {
+      Alert.alert('Error', 'Could not send your message. Please try again.');
+    }
+    setContactSubmitting(false);
+  }
 
   async function handleAvatarChange() {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -324,6 +340,13 @@ export default function TradieProfileScreen() {
             <Text style={[styles.bugBtnText, { color: colors.textSecondary }]}>🐛 Report a Bug</Text>
           </Pressable>
 
+          <Pressable
+            style={[styles.bugBtn, { borderColor: colors.border }]}
+            onPress={() => setContactVisible(true)}
+          >
+            <Text style={[styles.bugBtnText, { color: colors.textSecondary }]}>✉️ Contact Us</Text>
+          </Pressable>
+
           <Pressable style={[styles.signOutBtn, { borderColor: '#ef4444' }]} onPress={handleSignOut}>
             <Text style={styles.signOutText}>Sign Out</Text>
           </Pressable>
@@ -336,6 +359,15 @@ export default function TradieProfileScreen() {
 
         </View>
       </ScrollView>
+
+      <ContactUsModal
+        visible={contactVisible}
+        submitting={contactSubmitting}
+        initialFirstName={profile.full_name?.split(' ')[0] ?? ''}
+        initialLastName={profile.full_name?.split(' ').slice(1).join(' ') ?? ''}
+        onClose={() => setContactVisible(false)}
+        onSubmit={handleSubmitContact}
+      />
     </SafeAreaView>
   );
 }
