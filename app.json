@@ -19,9 +19,6 @@
         "NSMicrophoneUsageDescription": "Required for camera access.",
         "NSCalendarsUsageDescription": "Trust-a-Tradie adds your booked jobs to your calendar.",
         "NSCalendarsFullAccessUsageDescription": "Trust-a-Tradie adds your booked jobs to your calendar."
-      },
-      "config": {
-        "googleMapsApiKey": ""
       }
     },
     "android": {
@@ -43,12 +40,7 @@
         "VIBRATE",
         "READ_CALENDAR",
         "WRITE_CALENDAR"
-      ],
-      "config": {
-        "googleMaps": {
-          "apiKey": ""
-        }
-      }
+      ]
     },
     "web": {
       "output": "single",
