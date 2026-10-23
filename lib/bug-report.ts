@@ -37,17 +37,17 @@ export async function submitBugReport(params: {
     return;
   }
 
-  // Notify admin users
-  const { data: admins } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('role', 'admin');
+  // Notify admin users — admin accounts are tagged via the separate
+  // `admins` table, not profiles.role (which stays customer/tradie), and
+  // that table is admin-read-only under RLS, so this goes through the
+  // admin_user_ids() RPC rather than selecting from either directly.
+  const { data: adminIds } = await supabase.rpc('admin_user_ids');
 
-  if (admins && admins.length > 0) {
+  if (adminIds && adminIds.length > 0) {
     const title = 'Bug Report Received';
     const body = `${params.errorMessage.slice(0, 100)}${params.errorMessage.length > 100 ? '...' : ''}`;
-    for (const admin of admins) {
-      sendPushToUser(admin.id, title, body);
+    for (const id of adminIds) {
+      sendPushToUser(id, title, body);
     }
   }
 }
