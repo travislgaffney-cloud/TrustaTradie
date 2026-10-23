@@ -96,7 +96,7 @@
         "@sentry/react-native/expo",
         {
           "organization": "trustatradie",
-          "project": "trustatradie",
+          "project": "react-native",
           "url": "https://sentry.io/"
         }
       ]
