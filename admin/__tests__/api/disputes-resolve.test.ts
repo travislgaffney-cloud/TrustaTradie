@@ -16,8 +16,10 @@ const REAL_ADMIN = { id: 'real-admin-42', email: 'admin@trustatradie.com' };
 // defaulting the mock to a real admin keeps the other tests representative
 // of that.
 const mockGetCurrentAdmin = jest.fn().mockResolvedValue(REAL_ADMIN);
+const mockGetCurrentAdminAccessToken = jest.fn().mockResolvedValue('real-admin-session-token');
 jest.mock('@/lib/supabase-server', () => ({
   getCurrentAdmin: () => mockGetCurrentAdmin(),
+  getCurrentAdminAccessToken: () => mockGetCurrentAdminAccessToken(),
 }));
 
 const mockLogAdminAction = jest.fn().mockResolvedValue(undefined);
@@ -39,17 +41,22 @@ function makeRequest(body: unknown) {
 const NOTE_ROW = { id: 'note-1', job_id: 'job-1', note: 'Looked into it', admin: { full_name: 'Site Admin' } };
 const TXN = { id: 'txn-1', customer_id: 'cust-1', tradie_id: 'tradie-1', status: 'disputed' };
 
-// This route is where an admin's dispute decision actually moves money in
-// the internal ledger — it maps a 3-way admin action to both jobs.status and
-// transactions.status, and (per its own TODO) only updates our ledger, not
-// TradeSafe's real funds. These tests pin the three action -> status
-// mappings and guard against regressing the "no session" / "no note"
-// failure paths.
+// This route is where an admin's dispute decision actually moves money. It
+// maps a 3-way admin action to both jobs.status and transactions.status, and
+// — for marked_completed/marked_cancelled — also calls the
+// tradesafe-allocation-action edge function (best-effort; a rejected or
+// failed call doesn't block the ledger update, same pattern as
+// payment-releases/release). global.fetch is mocked to `{ ok: true }` by
+// default here, so these tests aren't exercising TradeSafe's real response
+// shape — see tradesafe-allocation-action's own tests for that. These tests
+// pin the three action -> status mappings and guard against regressing the
+// "no session" / "no note" failure paths.
 describe('POST /api/disputes/resolve', () => {
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
     mockGetCurrentAdmin.mockResolvedValue(REAL_ADMIN);
+    mockGetCurrentAdminAccessToken.mockResolvedValue('real-admin-session-token');
     global.fetch = jest.fn().mockResolvedValue({ ok: true });
   });
 
@@ -99,6 +106,57 @@ describe('POST /api/disputes/resolve', () => {
       expect.objectContaining({ user_id: TXN.customer_id }),
       expect.objectContaining({ user_id: TXN.tradie_id }),
     ]);
+  });
+
+  it.each([
+    ['marked_completed', 'accept'],
+    ['marked_cancelled', 'cancel'],
+  ])('action=%s calls tradesafe-allocation-action with action=%s', async (action, tsAction) => {
+    setupSupabase({
+      profiles: { data: { push_token: null }, error: null },
+      dispute_notes: { data: NOTE_ROW, error: null },
+      transactions: { data: TXN, error: null },
+    });
+    const { POST } = await import('@/app/api/disputes/resolve/route');
+    await POST(makeRequest({ jobId: 'job-1', note: 'resolved', action }));
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/functions/v1/tradesafe-allocation-action'),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ jobId: 'job-1', action: tsAction, comment: 'resolved' }),
+      })
+    );
+  });
+
+  it('does not call TradeSafe for a reverted_to_in_progress resolution', async () => {
+    setupSupabase({
+      profiles: { data: { push_token: null }, error: null },
+      dispute_notes: { data: NOTE_ROW, error: null },
+      transactions: { data: TXN, error: null },
+    });
+    const { POST } = await import('@/app/api/disputes/resolve/route');
+    await POST(makeRequest({ jobId: 'job-1', note: 'resolved', action: 'reverted_to_in_progress' }));
+
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('still updates the ledger when the TradeSafe call fails', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new Error('network error'));
+    setupSupabase({
+      profiles: { data: { push_token: null }, error: null },
+      dispute_notes: { data: NOTE_ROW, error: null },
+      transactions: { data: TXN, error: null },
+    });
+    const { POST } = await import('@/app/api/disputes/resolve/route');
+    const res = await POST(makeRequest({ jobId: 'job-1', note: 'resolved', action: 'marked_completed' }));
+
+    expect(res.status).toBe(200);
+    const txnCalls = supabaseMock.fromFn.mock.calls
+      .map((call, i) => ({ call, chain: supabaseMock.fromFn.mock.results[i].value }))
+      .filter(({ call }) => call[0] === 'transactions');
+    const txnUpdateCall = txnCalls.find(({ chain }) => chain.update.mock.calls.length > 0);
+    expect(txnUpdateCall?.chain.update).toHaveBeenCalledWith({ status: 'released' });
   });
 
   it('leaves jobs and transactions untouched for a note-only resolution', async () => {

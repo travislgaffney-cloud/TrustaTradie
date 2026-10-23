@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { tradesafeRequest } from '../_shared/tradesafe.ts';
 import { checkRateLimit, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
-import { type Action, isValidAction, isAuthorizedCaller } from './logic.ts';
+import { type Action, isValidAction, isAuthorizedCaller, ADMIN_ONLY_ACTIONS } from './logic.ts';
 
 const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -14,6 +14,8 @@ const supabaseAdmin = createClient(
 //   - 'complete' — tradie marks the job done (allocationCompleteDelivery)
 //   - 'accept'   — customer releases payment (allocationAcceptDelivery)
 //   - 'dispute'  — customer raises a dispute (allocationDisputeDelivery)
+//   - 'cancel'   — admin resolves a dispute by refunding the customer
+//                  (transactionCancel) — admin-only, see ADMIN_ONLY_ACTIONS
 // The resulting fund movement (FUNDS_RELEASED etc.) still arrives via
 // tradesafe-webhook as the source of truth for the internal ledger; this
 // function only triggers the action on TradeSafe's side.
@@ -43,6 +45,15 @@ const MUTATIONS: Record<Action, string> = {
   complete: `mutation($id: ID!) { allocationCompleteDelivery(id: $id) { id state } }`,
   accept: `mutation($id: ID!) { allocationAcceptDelivery(id: $id) { id state } }`,
   dispute: `mutation($id: ID!, $comment: String!) { allocationDisputeDelivery(id: $id, comment: $comment) { id state } }`,
+  // Unlike every other action here, this operates on the TRANSACTION id, not
+  // the allocation id — see the tradesafe_transaction_id branch below. Used
+  // by admin to resolve a dispute in the customer's favour (refund). Found
+  // via live schema introspection against the sandbox — confirmed to exist
+  // with this exact shape, but not yet confirmed live against a funded
+  // transaction (that would require actually moving sandbox money to test),
+  // so it goes through the same best-effort/continue-on-failure pattern as
+  // 'accept' below rather than being trusted unconditionally.
+  cancel: `mutation($id: ID!, $comment: String) { transactionCancel(id: $id, comment: $comment) { id state } }`,
 };
 
 async function runComplete(allocationId: string): Promise<string> {
@@ -86,11 +97,25 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
 
-    const { data: { user: caller } } = await supabaseAdmin.auth.getUser(authHeader.replace('Bearer ', ''));
+    // Always a real user JWT now — the admin dashboard passes the admin's
+    // own session token (getCurrentAdminAccessToken()), not the
+    // service-role key. That earlier approach compared the raw bearer
+    // against Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') and never actually
+    // matched in practice (this project has more than one valid
+    // service-role-equivalent credential in play), so every admin-initiated
+    // call — payment-releases' 'accept' included — silently 401'd before
+    // ever reaching TradeSafe. Checking real admins-table membership below
+    // avoids relying on exact-string comparison against key material
+    // entirely, and ties the privileged action to an audited identity.
+    const { data } = await supabaseAdmin.auth.getUser(authHeader.replace('Bearer ', ''));
+    const caller = data.user;
     if (!caller) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
 
     const userLimit = await checkRateLimit(supabaseAdmin, `user:${caller.id}:tradesafe-allocation-action`, { limit: 10, windowSeconds: 300 });
     if (!userLimit.allowed) return rateLimitResponse(userLimit.retryAfterSeconds);
+
+    const { data: adminRow } = await supabaseAdmin.from('admins').select('user_id').eq('user_id', caller.id).maybeSingle();
+    const isAdminCaller = !!adminRow;
 
     const { jobId, action, comment } = (await req.json()) as { jobId: string; action: Action; comment?: string };
     if (!jobId || !isValidAction(action)) {
@@ -99,30 +124,36 @@ Deno.serve(async (req) => {
     if (action === 'dispute' && !comment) {
       return new Response(JSON.stringify({ error: 'A comment is required to raise a dispute' }), { status: 400 });
     }
+    if (ADMIN_ONLY_ACTIONS.includes(action) && !isAdminCaller) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+    }
 
     const { data: txn } = await supabaseAdmin
       .from('transactions')
-      .select('customer_id, tradie_id, tradesafe_allocation_id')
+      .select('customer_id, tradie_id, tradesafe_allocation_id, tradesafe_transaction_id')
       .eq('job_id', jobId)
       .single();
 
     if (!txn) return new Response(JSON.stringify({ error: 'Transaction not found' }), { status: 404 });
-    if (!txn.tradesafe_allocation_id) {
+
+    // 'cancel' operates on the overall TRANSACTION, not an allocation.
+    const requiredId = action === 'cancel' ? txn.tradesafe_transaction_id : txn.tradesafe_allocation_id;
+    if (!requiredId) {
       return new Response(JSON.stringify({ error: 'Payment has not been initiated via TradeSafe yet' }), { status: 409 });
     }
 
-    if (!isAuthorizedCaller(caller.id, action, txn)) {
+    if (!isAdminCaller && !isAuthorizedCaller(caller.id, action, txn)) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
     }
 
     let state: string;
     if (action === 'complete') {
-      state = await runComplete(txn.tradesafe_allocation_id);
+      state = await runComplete(requiredId);
     } else if (action === 'accept') {
-      state = await runAccept(txn.tradesafe_allocation_id);
+      state = await runAccept(requiredId);
     } else {
-      const variables: Record<string, unknown> = { id: txn.tradesafe_allocation_id };
-      if (action === 'dispute') variables.comment = comment;
+      const variables: Record<string, unknown> = { id: requiredId };
+      if (action === 'dispute' || action === 'cancel') variables.comment = comment;
       const data = await tradesafeRequest<Record<string, { state: string }>>(MUTATIONS[action], variables);
       state = data[Object.keys(data)[0]].state;
     }

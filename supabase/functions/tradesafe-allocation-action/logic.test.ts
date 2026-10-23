@@ -1,13 +1,22 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { isValidAction, getExpectedCaller, isAuthorizedCaller } from './logic.ts';
+import { isValidAction, getExpectedCaller, isAuthorizedCaller, ADMIN_ONLY_ACTIONS } from './logic.ts';
 
 const TXN = { tradie_id: 'tradie-1', customer_id: 'customer-1' };
 
-Deno.test('isValidAction - accepts the four real actions', () => {
+Deno.test('isValidAction - accepts the five real actions', () => {
   assertEquals(isValidAction('start'), true);
   assertEquals(isValidAction('complete'), true);
   assertEquals(isValidAction('accept'), true);
   assertEquals(isValidAction('dispute'), true);
+  assertEquals(isValidAction('cancel'), true);
+});
+
+Deno.test('ADMIN_ONLY_ACTIONS - cancel is admin-only; nothing else is', () => {
+  assertEquals(ADMIN_ONLY_ACTIONS.includes('cancel'), true);
+  assertEquals(ADMIN_ONLY_ACTIONS.includes('start'), false);
+  assertEquals(ADMIN_ONLY_ACTIONS.includes('complete'), false);
+  assertEquals(ADMIN_ONLY_ACTIONS.includes('accept'), false);
+  assertEquals(ADMIN_ONLY_ACTIONS.includes('dispute'), false);
 });
 
 Deno.test('isValidAction - rejects anything else, including near-misses', () => {

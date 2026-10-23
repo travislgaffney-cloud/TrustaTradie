@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
-import { getCurrentAdmin } from "@/lib/supabase-server";
+import { getCurrentAdmin, getCurrentAdminAccessToken } from "@/lib/supabase-server";
 import { logAdminAction } from "@/lib/audit";
 
 async function sendPush(userId: string, title: string, body: string, data: Record<string, string>) {
@@ -59,13 +59,20 @@ export async function POST(req: Request) {
 
   if (txn.tradesafe_allocation_id) {
     try {
+      const adminToken = await getCurrentAdminAccessToken();
       const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/tradesafe-allocation-action`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${adminToken}` },
         body: JSON.stringify({ jobId: job.id, action: "accept" }),
       });
       if (!res.ok) {
-        console.warn("[payment-releases/release] TradeSafe accept call rejected (expected — server-side credentials can't finalize as the buyer), continuing:", await res.text());
+        // This call was actually silently 401ing on tradesafe-allocation-action's
+        // own auth check (service-role key never resolved to a real caller)
+        // until that was fixed by sending the admin's own session token
+        // instead, not failing for the buyer-only reason this warning used
+        // to claim — that reason is real but belongs to TradeSafe's own
+        // API, a separate, still-possible rejection on top of this.
+        console.warn("[payment-releases/release] TradeSafe accept call rejected, continuing with local release:", await res.text());
       }
     } catch (tsErr) {
       console.warn("[payment-releases/release] TradeSafe accept call failed, continuing with local release:", tsErr);

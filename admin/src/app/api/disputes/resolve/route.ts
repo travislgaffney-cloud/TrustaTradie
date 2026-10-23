@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
-import { getCurrentAdmin } from "@/lib/supabase-server";
+import { getCurrentAdmin, getCurrentAdminAccessToken } from "@/lib/supabase-server";
 import { logAdminAction } from "@/lib/audit";
 
 async function sendPush(userId: string, title: string, body: string, data: Record<string, string>) {
@@ -86,9 +86,34 @@ export async function POST(req: Request) {
       .single();
 
     if (txn) {
-      // TODO: this updates our internal ledger only. It does not yet call
-      // TradeSafe's own release/amendment API to move real funds — that
-      // needs wiring separately before this is safe to use with real money.
+      // Same best-effort pattern as payment-releases/release: call TradeSafe
+      // first, log a warning and continue regardless of the outcome, then
+      // update our own ledger either way — that update is what actually
+      // drives the app's UI and notifications, with TradeSafe's webhook as
+      // a second, independent path to the same status if the direct call
+      // didn't go through. 'marked_completed' releases to the tradie
+      // (allocationAcceptDelivery, same action the customer's own "accept"
+      // button uses); 'marked_cancelled' refunds the customer
+      // (transactionCancel) — see tradesafe-allocation-action for exactly
+      // what each one does and does not have confirmed against a real
+      // funded sandbox transaction.
+      const tsAction = action === "marked_completed" ? "accept" : action === "marked_cancelled" ? "cancel" : null;
+      if (tsAction) {
+        try {
+          const adminToken = await getCurrentAdminAccessToken();
+          const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/tradesafe-allocation-action`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${adminToken}` },
+            body: JSON.stringify({ jobId, action: tsAction, comment: note }),
+          });
+          if (!res.ok) {
+            console.warn(`[disputes/resolve] TradeSafe ${tsAction} call rejected, continuing with local ledger update:`, await res.text());
+          }
+        } catch (tsErr) {
+          console.warn(`[disputes/resolve] TradeSafe ${tsAction} call failed, continuing with local ledger update:`, tsErr);
+        }
+      }
+
       await supabase
         .from("transactions")
         .update({ status: transactionStatusMap[action] })

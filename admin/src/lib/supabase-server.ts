@@ -46,3 +46,13 @@ export async function getCurrentAdmin(): Promise<{ id: string; email: string } |
 
   return { id: user.id, email: user.email ?? '' };
 }
+
+// For routes that need to call an edge function AS this admin (e.g.
+// tradesafe-allocation-action's admin-only 'cancel'/'accept' actions) rather
+// than as the service-role key — ties the privileged call to a real,
+// audited admin identity instead of a shared secret.
+export async function getCurrentAdminAccessToken(): Promise<string | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
+}
