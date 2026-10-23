@@ -11,8 +11,11 @@ import { useNotificationRouter } from '@/hooks/use-notification-router';
 import { useAuthStore } from '@/store/auth-store';
 import { AppLoadingScreen } from '@/components/ui/app-loading-screen';
 import { ErrorBoundary } from '@/components/error-boundary';
+// Module-scope import so Sentry.init() runs as early as possible in the
+// app's lifecycle, before any screen renders.
+import { Sentry } from '@/lib/sentry';
 
-export default function RootLayout() {
+function RootLayout() {
   const colorScheme = useColorScheme();
   const { isLoading, session, profile } = useAuthStore();
 
@@ -45,3 +48,5 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+export default Sentry.wrap(RootLayout);

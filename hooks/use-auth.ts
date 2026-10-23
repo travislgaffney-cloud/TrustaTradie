@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { registerForPushNotifications, savePushToken } from '@/lib/notifications';
+import { Sentry } from '@/lib/sentry';
 import { useAuthStore } from '@/store/auth-store';
 import type { Profile, TradieProfile } from '@/types/database';
 
@@ -25,6 +26,7 @@ export function useAuth() {
           const token = await registerForPushNotifications();
           if (token) await savePushToken(session.user.id, token);
         } else {
+          Sentry.setUser(null);
           reset();
         }
       }
@@ -43,6 +45,9 @@ export function useAuth() {
       .single<Profile>();
 
     setProfile(profile ?? null);
+    // Ties crash reports to a role/id, not personal data — nothing beyond
+    // what's needed to tell "which account hit this" from the dashboard.
+    Sentry.setUser(profile ? { id: profile.id, role: profile.role } : null);
 
     if (profile?.role === 'tradie') {
       const { data: tp } = await supabase

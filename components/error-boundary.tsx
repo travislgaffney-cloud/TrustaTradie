@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { submitBugReport } from '@/lib/bug-report';
+import { Sentry } from '@/lib/sentry';
 import { Brand } from '@/constants/theme';
 
 interface Props {
@@ -31,6 +32,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[ErrorBoundary]', error, info.componentStack);
+    // Reported automatically, unlike the "Send Bug Report" button below —
+    // a crash the user never bothers reporting still reaches Sentry.
+    Sentry.captureException(error, { contexts: { react: { componentStack: info.componentStack } } });
   }
 
   handleSendReport = async () => {

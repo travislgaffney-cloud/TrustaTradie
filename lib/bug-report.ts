@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { sendPushToUser } from './notifications';
+import { Sentry } from './sentry';
 
 export async function submitBugReport(params: {
   errorMessage: string;
@@ -35,6 +36,18 @@ export async function submitBugReport(params: {
   if (error) {
     console.warn('[BugReport] Failed to submit:', error.message);
     return;
+  }
+
+  // The ErrorBoundary crash path already calls Sentry.captureException
+  // itself (componentDidCatch) — only the manual "Report a Bug" button
+  // (no prior crash) needs reporting here, so the same event isn't logged
+  // to Sentry twice.
+  if (params.screen !== 'ErrorBoundary (crash)') {
+    Sentry.captureMessage(params.errorMessage, {
+      level: 'info',
+      tags: { source: 'manual_bug_report', screen: params.screen ?? 'unknown' },
+      extra: { stackTrace: params.stackTrace, deviceInfo, appVersion },
+    });
   }
 
   // Notify admin users — admin accounts are tagged via the separate
