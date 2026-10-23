@@ -47,12 +47,15 @@ const MUTATIONS: Record<Action, string> = {
   dispute: `mutation($id: ID!, $comment: String!) { allocationDisputeDelivery(id: $id, comment: $comment) { id state } }`,
   // Unlike every other action here, this operates on the TRANSACTION id, not
   // the allocation id — see the tradesafe_transaction_id branch below. Used
-  // by admin to resolve a dispute in the customer's favour (refund). Found
-  // via live schema introspection against the sandbox — confirmed to exist
-  // with this exact shape, but not yet confirmed live against a funded
-  // transaction (that would require actually moving sandbox money to test),
-  // so it goes through the same best-effort/continue-on-failure pattern as
-  // 'accept' below rather than being trusted unconditionally.
+  // by admin to resolve a dispute in the customer's favour (refund).
+  // Confirmed live end-to-end (not just introspected): created a real job
+  // through tradesafe-checkout, got a real sandbox transaction id, called
+  // this via the admin's real session through /api/disputes/resolve, and
+  // got back { state: "CANCELED" } — unlike transactionAccept, our AGENT
+  // credentials ARE authorized to call this one. Still goes through the
+  // same best-effort/continue-on-failure pattern as 'accept' below, since a
+  // rejection is still possible for transactions in other states (e.g.
+  // already funded/released) that this test didn't cover.
   cancel: `mutation($id: ID!, $comment: String) { transactionCancel(id: $id, comment: $comment) { id state } }`,
 };
 
