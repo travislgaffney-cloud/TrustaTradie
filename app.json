@@ -92,7 +92,14 @@
       "expo-sharing",
       "expo-web-browser",
       "expo-status-bar",
-      "@sentry/react-native"
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "trustatradie",
+          "project": "trustatradie",
+          "url": "https://sentry.io/"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false,
