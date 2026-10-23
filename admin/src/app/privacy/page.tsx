@@ -157,7 +157,10 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-xl font-bold text-gray-900 mb-3">9. Contact Us</h2>
             <p>
               If you have questions about this policy or how your information is handled, contact us at{" "}
-              <span className="font-medium text-gray-900">[INSERT CONTACT EMAIL]</span>.
+              <a href="mailto:admin@trustatradie.co.za" className="font-medium text-gray-900 underline">
+                admin@trustatradie.co.za
+              </a>
+              .
             </p>
           </section>
         </div>
