@@ -116,7 +116,30 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">9. Disclaimers &amp; Limitation of Liability</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">9. Intellectual Property &amp; Restrictions on Use</h2>
+            <p>
+              The App, including its software, design, graphics, logos, trademarks, and all content we provide
+              (excluding content users submit, such as job descriptions, photos, and reviews), is owned by
+              Trust-a-Tradie or our licensors and is protected by copyright, trademark, and other intellectual
+              property laws. We grant you a limited, personal, non-transferable licence to use the App for its
+              intended purpose. Except as that licence allows, you may not:
+            </p>
+            <ul className="list-disc pl-6 space-y-1.5 mt-2">
+              <li>Copy, reproduce, distribute, or create derivative works based on the App or its content.</li>
+              <li>Reverse engineer, decompile, disassemble, or otherwise attempt to derive the source code of the App.</li>
+              <li>Scrape, crawl, harvest, or use any automated means (bots, scripts, data-mining tools) to extract data from the App, including job listings, tradie profiles, pricing, or reviews.</li>
+              <li>Circumvent, disable, or interfere with security-related or access-control features of the App.</li>
+              <li>Use the Trust-a-Tradie name, logo, or branding without our prior written permission.</li>
+              <li>Build or offer a competing product or service using data or functionality obtained from the App.</li>
+            </ul>
+            <p className="mt-3">
+              We may suspend or terminate the account of, and pursue legal remedies against, anyone who violates
+              this section.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">10. Disclaimers &amp; Limitation of Liability</h2>
             <p>
               The App is provided &quot;as is&quot;. To the maximum extent permitted by law, Trust-a-Tradie is not
               liable for the quality, safety, legality, or outcome of any job performed by a tradie, for any
@@ -126,7 +149,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">10. Changes to These Terms</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">11. Changes to These Terms</h2>
             <p>
               We may update these Terms from time to time. We will post the updated version on this page with a
               new effective date. Continued use of the App after a change means you accept the updated Terms.
@@ -134,14 +157,14 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">11. Governing Law</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">12. Governing Law</h2>
             <p>
               These Terms are governed by the laws of the Republic of South Africa.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">12. Contact Us</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">13. Contact Us</h2>
             <p>
               If you have questions about these Terms, contact us at{" "}
               <a href="mailto:admin@trustatradie.co.za" className="font-medium text-gray-900 underline">
