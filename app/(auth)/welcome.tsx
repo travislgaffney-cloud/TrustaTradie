@@ -10,7 +10,6 @@ import {
   View,
 } from 'react-native';
 import { AppleSignInButton } from '@/components/auth/apple-sign-in-button';
-import { FacebookSignInButton } from '@/components/auth/facebook-sign-in-button';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { Button } from '@/components/ui/button';
 import { Brand, Colors } from '@/constants/theme';
@@ -42,7 +41,6 @@ export default function WelcomeScreen() {
         <View style={styles.actions}>
           <AppleSignInButton />
           <GoogleSignInButton />
-          <FacebookSignInButton />
 
           <View style={styles.divider}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
