@@ -32,7 +32,7 @@
         "simulator": true,
         "resourceClass": "m-medium"
       },
-      "channel": "preview:simulator"
+      "channel": "preview-simulator"
     },
     "production": {
       "autoIncrement": true,
