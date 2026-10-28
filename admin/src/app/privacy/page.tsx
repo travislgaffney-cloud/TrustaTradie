@@ -146,7 +146,30 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">8. Changes to This Policy</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">8. Intellectual Property &amp; Restrictions on Use</h2>
+            <p>
+              The App, including its software, design, graphics, logos, trademarks, and all content we provide
+              (excluding content users submit, such as job descriptions, photos, and reviews), is owned by
+              Trust-a-Tradie or our licensors and is protected by copyright, trademark, and other intellectual
+              property laws. We grant you a limited, personal, non-transferable licence to use the App for its
+              intended purpose. Except as that licence allows, you may not:
+            </p>
+            <ul className="list-disc pl-6 space-y-1.5 mt-2">
+              <li>Copy, reproduce, distribute, or create derivative works based on the App or its content.</li>
+              <li>Reverse engineer, decompile, disassemble, or otherwise attempt to derive the source code of the App.</li>
+              <li>Scrape, crawl, harvest, or use any automated means (bots, scripts, data-mining tools) to extract data from the App, including job listings, tradie profiles, pricing, or reviews.</li>
+              <li>Circumvent, disable, or interfere with security-related or access-control features of the App.</li>
+              <li>Use the Trust-a-Tradie name, logo, or branding without our prior written permission.</li>
+              <li>Build or offer a competing product or service using data or functionality obtained from the App.</li>
+            </ul>
+            <p className="mt-3">
+              We may suspend or terminate the account of, and pursue legal remedies against, anyone who violates
+              this section. See our Terms of Service for the full terms governing use of the App.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">9. Changes to This Policy</h2>
             <p>
               We may update this policy from time to time. We will post the updated version on this page with a
               new effective date.
@@ -154,7 +177,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">9. Contact Us</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">10. Contact Us</h2>
             <p>
               If you have questions about this policy or how your information is handled, contact us at{" "}
               <a href="mailto:admin@trustatradie.co.za" className="font-medium text-gray-900 underline">
