@@ -12,7 +12,8 @@
       },
       "android": {
         "resourceClass": "medium"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -30,7 +31,8 @@
       "ios": {
         "simulator": true,
         "resourceClass": "m-medium"
-      }
+      },
+      "channel": "preview:simulator"
     },
     "production": {
       "autoIncrement": true,

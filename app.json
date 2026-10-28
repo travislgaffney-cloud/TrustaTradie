@@ -18,7 +18,8 @@
         "NSPhotoLibraryUsageDescription": "Used to upload photos for jobs, portfolio, and documents.",
         "NSMicrophoneUsageDescription": "Required for camera access.",
         "NSCalendarsUsageDescription": "Trust-a-Tradie adds your booked jobs to your calendar.",
-        "NSCalendarsFullAccessUsageDescription": "Trust-a-Tradie adds your booked jobs to your calendar."
+        "NSCalendarsFullAccessUsageDescription": "Trust-a-Tradie adds your booked jobs to your calendar.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -31,15 +32,16 @@
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "CAMERA",
-        "READ_MEDIA_IMAGES",
-        "READ_MEDIA_VIDEO",
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE",
-        "READ_CALENDAR",
-        "WRITE_CALENDAR"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -109,6 +111,12 @@
       "eas": {
         "projectId": "593b69a2-885e-4a2c-b950-46260707acce"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/593b69a2-885e-4a2c-b950-46260707acce"
     }
   }
 }
