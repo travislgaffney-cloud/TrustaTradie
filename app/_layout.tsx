@@ -1,4 +1,6 @@
 import type { ComponentType } from 'react';
+// TEMPORARY, imported first on purpose — see lib/crash-diagnostic.ts for why.
+import '@/lib/crash-diagnostic';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
