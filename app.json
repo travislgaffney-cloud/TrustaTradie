@@ -11,6 +11,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.trustatradie.app",
       "usesAppleSignIn": true,
+      "jsEngine": "jsc",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Trust-a-Tradie uses your location to show nearby jobs and tradies.",
         "NSLocationAlwaysUsageDescription": "Trust-a-Tradie uses your location to notify tradies of nearby jobs.",
