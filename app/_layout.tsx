@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -49,4 +50,14 @@ function RootLayout() {
   );
 }
 
-export default Sentry.wrap(RootLayout);
+// Guarded for the same reason as Sentry.init() in lib/sentry.ts — this
+// also runs at module-eval time, before anything renders, so a problem in
+// Sentry's own wrap() must not be able to take the whole app down with it.
+let ExportedRootLayout: ComponentType<Record<string, unknown>> = RootLayout;
+try {
+  ExportedRootLayout = Sentry.wrap(RootLayout);
+} catch (err) {
+  console.warn('[sentry] wrap failed, rendering without it:', err);
+}
+
+export default ExportedRootLayout;
