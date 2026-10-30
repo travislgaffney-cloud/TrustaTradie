@@ -7,6 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "trustatradie",
     "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.trustatradie.app",

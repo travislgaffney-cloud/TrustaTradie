@@ -1,4 +1,4 @@
-import * as Calendar from 'expo-calendar/legacy';
+import * as Calendar from 'expo-calendar';
 import { Alert, Platform } from 'react-native';
 
 export async function addJobToDeviceCalendar(params: {
