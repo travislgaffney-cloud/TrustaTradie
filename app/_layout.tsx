@@ -14,7 +14,7 @@ import { AppLoadingScreen } from '@/components/ui/app-loading-screen';
 import { ErrorBoundary } from '@/components/error-boundary';
 // Module-scope import so Sentry.init() runs as early as possible in the
 // app's lifecycle, before any screen renders.
-import { Sentry } from '@/lib/sentry';
+import { Sentry, sentryActive } from '@/lib/sentry';
 
 function RootLayout() {
   const colorScheme = useColorScheme();
@@ -54,10 +54,12 @@ function RootLayout() {
 // also runs at module-eval time, before anything renders, so a problem in
 // Sentry's own wrap() must not be able to take the whole app down with it.
 let ExportedRootLayout: ComponentType<Record<string, unknown>> = RootLayout;
-try {
-  ExportedRootLayout = Sentry.wrap(RootLayout);
-} catch (err) {
-  console.warn('[sentry] wrap failed, rendering without it:', err);
+if (sentryActive) {
+  try {
+    ExportedRootLayout = Sentry.wrap(RootLayout);
+  } catch (err) {
+    console.warn('[sentry] wrap failed, rendering without it:', err);
+  }
 }
 
 export default ExportedRootLayout;
