@@ -2,17 +2,15 @@ import * as Sentry from '@sentry/react-native';
 
 const dsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
 
-// TEMPORARY: fully disabled to isolate a real TestFlight launch crash
-// (RCTExceptionsManager reportFatal on the TurboModule queue, crash
-// 15485714-9C00-4E94-A8F3-1FB926197B10) that started appearing in the same
-// build this was added. The React Native-level "disable New Architecture"
-// workaround for the known upstream iOS 26 TurboModule bug turned out to be
-// unavailable on this RN version (silently ignored), so this skips Sentry's
-// native init entirely for one build to test whether it's the actual
-// trigger — Sentry's native setup does work asynchronously on a background
-// queue, which the try/catch below can't protect against. Remove this
-// early return once the real cause is confirmed one way or the other.
-const SENTRY_TEMPORARILY_DISABLED = true;
+// Re-enabled as a diagnostic tool: the original TurboModule crash is gone
+// (confirmed fixed by the SDK 54 New Architecture downgrade), but a new
+// crash now happens via expo-updates' ErrorRecovery.crash() path
+// (expo.controller.errorRecoveryQueue), which re-throws whatever error
+// originally triggered it. That original error never reaches our JS-level
+// ErrorUtils handler (ruling out a plain JS throw), so Sentry's native
+// crash handler - which captures SIGABRT/NSException crashes independently
+// of JS - is the fastest way to see the real exception name/reason.
+const SENTRY_TEMPORARILY_DISABLED = false;
 
 export const sentryActive = Boolean(dsn) && !SENTRY_TEMPORARILY_DISABLED;
 
