@@ -99,7 +99,8 @@
           "project": "react-native",
           "url": "https://sentry.io/"
         }
-      ]
+      ],
+      "./plugins/withNativeCrashReporter.js"
     ],
     "experiments": {
       "typedRoutes": false,
