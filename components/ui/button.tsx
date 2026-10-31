@@ -4,10 +4,14 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  type GestureResponderEvent,
   type PressableProps,
 } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
@@ -26,11 +30,28 @@ export function Button({
   disabled,
   children,
   style,
+  onPressIn,
+  onPressOut,
   ...props
 }: ButtonProps) {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const isDisabled = disabled || loading;
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = (e: GestureResponderEvent) => {
+    scale.value = withSpring(0.96, { damping: 14, stiffness: 400 });
+    onPressIn?.(e);
+  };
+
+  const handlePressOut = (e: GestureResponderEvent) => {
+    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
+    onPressOut?.(e);
+  };
 
   const containerStyle = [
     styles.base,
@@ -55,9 +76,11 @@ export function Button({
   ];
 
   return (
-    <Pressable
-      style={({ pressed }) => [...(containerStyle as object[]), pressed && !isDisabled ? styles.pressed : null] as unknown as object}
+    <AnimatedPressable
+      style={[...(containerStyle as object[]), animatedStyle] as unknown as object}
       disabled={isDisabled}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       {...props}
     >
       {loading ? (
@@ -68,7 +91,7 @@ export function Button({
       ) : (
         <Text style={textStyle}>{children}</Text>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -84,7 +107,6 @@ const styles = StyleSheet.create({
   size_md: { paddingVertical: 12, paddingHorizontal: 20, minHeight: 48 },
   size_lg: { paddingVertical: 16, paddingHorizontal: 24, minHeight: 56 },
   disabled: { opacity: 0.5 },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   text: { fontWeight: '600' },
   textSize_sm: { fontSize: 14 },
   textSize_md: { fontSize: 16 },
