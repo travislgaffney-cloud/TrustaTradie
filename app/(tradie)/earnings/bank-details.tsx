@@ -37,6 +37,7 @@ export default function BankDetailsScreen() {
       accountNumber: profile?.bank_account_number ?? '',
       branchCode: profile?.bank_branch_code ?? '',
       accountType: profile?.bank_account_type ?? '',
+      accountHolder: profile?.bank_account_holder ?? '',
     },
   });
 
@@ -50,6 +51,7 @@ export default function BankDetailsScreen() {
         bank_account_number: data.accountNumber,
         bank_branch_code: data.branchCode,
         bank_account_type: data.accountType,
+        bank_account_holder: data.accountHolder,
       })
       .eq('id', user.id)
       .select()
@@ -100,6 +102,9 @@ export default function BankDetailsScreen() {
         <View style={styles.form}>
           <Controller control={control} name="bankName" render={({ field }) => (
             <Input label="Bank name *" error={errors.bankName?.message} onChangeText={field.onChange} value={field.value} />
+          )} />
+          <Controller control={control} name="accountHolder" render={({ field }) => (
+            <Input label="Account holder name *" error={errors.accountHolder?.message} onChangeText={field.onChange} value={field.value} placeholder="Name as it appears on the account" />
           )} />
           <Controller control={control} name="accountNumber" render={({ field }) => (
             <Input label="Account number *" keyboardType="numeric" error={errors.accountNumber?.message} onChangeText={field.onChange} value={field.value} />

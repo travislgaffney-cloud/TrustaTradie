@@ -56,6 +56,7 @@ export async function POST(req: Request) {
       bank_account_number: null,
       bank_branch_code: null,
       bank_account_type: null,
+      bank_account_holder: null,
       is_suspended: true,
     })
     .eq("id", id);

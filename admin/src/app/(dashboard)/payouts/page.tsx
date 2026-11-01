@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 async function getPayouts() {
   const { data } = await supabase
     .from("pending_payouts")
-    .select("*, tradie:profiles!pending_payouts_tradie_id_fkey(full_name, bank_name, bank_account_number, bank_branch_code, bank_account_type)")
+    .select("*, tradie:profiles!pending_payouts_tradie_id_fkey(full_name, bank_name, bank_account_number, bank_branch_code, bank_account_type, bank_account_holder)")
     .order("created_at", { ascending: false });
 
   return data ?? [];

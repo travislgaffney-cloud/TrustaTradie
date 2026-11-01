@@ -119,6 +119,7 @@ export interface Profile {
   bank_account_number: string | null;
   bank_branch_code: string | null;
   bank_account_type: string | null;
+  bank_account_holder: string | null;
   tradesafe_token: string | null;
   onboarding_complete: boolean;
   is_suspended: boolean;

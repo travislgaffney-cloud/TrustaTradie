@@ -17,6 +17,7 @@ interface Payout {
     bank_account_number: string | null;
     bank_branch_code: string | null;
     bank_account_type: string | null;
+    bank_account_holder: string | null;
   } | null;
 }
 
@@ -102,6 +103,7 @@ export function PayoutList({ payouts: initial }: { payouts: Payout[] }) {
                         {p.tradie.bank_name} · ****{p.tradie.bank_account_number?.slice(-4)}
                         <br />
                         <span className="text-xs text-gray-400">
+                          {p.tradie.bank_account_holder ? `${p.tradie.bank_account_holder} · ` : ""}
                           Branch: {p.tradie.bank_branch_code} · {p.tradie.bank_account_type}
                         </span>
                       </span>
