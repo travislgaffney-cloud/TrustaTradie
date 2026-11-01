@@ -28,7 +28,6 @@ export default function SignUpLocationScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { setProfile, profile, setTradieProfile } = useAuthStore();
-  const isTradie = profile?.role === 'tradie';
   const [loading, setLoading] = useState(false);
   const [towns, setTowns] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -46,8 +45,11 @@ export default function SignUpLocationScreen() {
   }
 
   useEffect(() => {
-    if (!isTradie) finishCustomerSignup();
-  }, [isTradie]);
+    // Wait for the global profile to actually load before deciding the role
+    // — profile is briefly null right after sign-in while loadProfile() is
+    // still in flight, which must not be mistaken for "this is a customer".
+    if (profile && profile.role !== 'tradie') finishCustomerSignup();
+  }, [profile]);
 
   async function handleSave() {
     if (towns.length === 0) {
@@ -68,7 +70,7 @@ export default function SignUpLocationScreen() {
     setLoading(false);
   }
 
-  if (!isTradie) return <LoadingSpinner full />;
+  if (!profile || profile.role !== 'tradie') return <LoadingSpinner full />;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>

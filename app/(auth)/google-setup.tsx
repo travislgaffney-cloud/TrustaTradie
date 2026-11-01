@@ -16,10 +16,13 @@ import { Brand, Colors } from '@/constants/theme';
 import { TRADE_CATEGORIES, type TradeCategory } from '@/constants/trade-categories';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/store/auth-store';
+import type { Profile } from '@/types/database';
 
 export default function GoogleSetupScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
+  const { setProfile } = useAuthStore();
 
   const [role, setRole] = useState<'customer' | 'tradie' | null>(null);
   const [name, setName] = useState('');
@@ -57,16 +60,23 @@ export default function GoogleSetupScreen() {
       return;
     }
 
-    const { error: profileError } = await supabase
+    const { data: updatedProfile, error: profileError } = await supabase
       .from('profiles')
       .update({ full_name: name, phone: phone || null, role })
-      .eq('id', user.id);
+      .eq('id', user.id)
+      .select()
+      .single<Profile>();
 
     if (profileError) {
       setError(profileError.message);
       setLoading(false);
       return;
     }
+
+    // Sync the global store immediately — sign-up-location.tsx (navigated to
+    // below) decides tradie-vs-customer from this, not from a fresh fetch, so
+    // without this it would still see the stale pre-role-selection profile.
+    if (updatedProfile) setProfile(updatedProfile);
 
     if (role === 'tradie') {
       const { error: tradieError } = await supabase
