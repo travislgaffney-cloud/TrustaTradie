@@ -20,10 +20,15 @@ export default function AuthLayout() {
   // inside the Stack below — a <Redirect> returned in place of that Stack
   // would have no mounted navigator to redirect within.
   useEffect(() => {
-    if (session && profile && !profile.onboarding_complete && session.user.app_metadata?.provider === 'email') {
+    // Also wait for !isLoading: loadProfile() sets `profile` before it sets
+    // `isLoading` back to false (there's an extra tradie_profiles fetch in
+    // between for tradie accounts), so without this the effect could fire
+    // while the Stack below is still unmounted for the loading spinner —
+    // router.replace has nothing mounted to navigate within at that instant.
+    if (!isLoading && session && profile && !profile.onboarding_complete && session.user.app_metadata?.provider === 'email') {
       router.replace('/(auth)/sign-up-location');
     }
-  }, [session, profile]);
+  }, [isLoading, session, profile]);
 
   if (isLoading) return <LoadingSpinner full />;
 
