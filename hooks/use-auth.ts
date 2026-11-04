@@ -29,8 +29,18 @@ export function useAuth() {
         setSession(session);
         if (session?.user) {
           await loadProfile(session.user.id);
-          const token = await registerForPushNotifications();
-          if (token) await savePushToken(session.user.id, token);
+          // Push registration can throw natively — e.g. Android crashes
+          // outright with "Default FirebaseApp is not initialized" when FCM
+          // credentials aren't configured (docs.expo.dev/push-notifications/
+          // fcm-credentials). That's a missing-setup problem, not a reason to
+          // crash the whole sign-in flow a user is in the middle of.
+          try {
+            const token = await registerForPushNotifications();
+            if (token) await savePushToken(session.user.id, token);
+          } catch (err) {
+            console.warn('[useAuth] push notification registration failed, continuing without it:', err);
+            Sentry.captureException(err);
+          }
         } else {
           Sentry.setUser(null);
           reset();
