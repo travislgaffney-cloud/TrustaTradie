@@ -36,7 +36,7 @@ export function Sidebar() {
         <p className="text-xs text-white/50 mt-1">Admin Dashboard</p>
       </div>
 
-      <nav className="flex-1 py-4">
+      <nav className="flex-1 min-h-0 overflow-y-auto py-4">
         {NAV_ITEMS.map((item) => {
           const isActive =
             item.href === "/"
