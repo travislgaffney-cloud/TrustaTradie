@@ -105,8 +105,8 @@ export default function MyQuotesAndJobsScreen() {
     try {
       await startJob(job.id, user!.id, date);
       refreshJobs();
-    } catch {
-      Alert.alert('Error', 'Could not book a start date for this job.');
+    } catch (err) {
+      Alert.alert('Could not book a start date', err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
       setUpdatingJobId(null);
       setStartingJob(null);
