@@ -1,16 +1,10 @@
-import { Redirect, Stack } from 'expo-router';
+import { router, Redirect, Stack } from 'expo-router';
+import { useEffect } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function AuthLayout() {
   const { session, isLoading, profile } = useAuthStore();
-
-  if (isLoading) return <LoadingSpinner full />;
-
-  if (session && profile?.onboarding_complete) {
-    if (profile.role === 'tradie') return <Redirect href="/(tradie)/home" />;
-    return <Redirect href="/(customer)/home" />;
-  }
 
   // A session can persist across app restarts (AsyncStorage) for an account
   // that signed up but never finished onboarding — e.g. closed the app
@@ -22,8 +16,20 @@ export default function AuthLayout() {
   // Google OAuth accounts still need google-setup first (role/categories
   // aren't collected yet at this point), so they're left to their own
   // explicit resume logic rather than being sent to sign-up-location here.
-  if (session && profile && !profile.onboarding_complete && session.user.app_metadata?.provider === 'email') {
-    return <Redirect href="/(auth)/sign-up-location" />;
+  // Done imperatively (not via <Redirect>) because the target screen lives
+  // inside the Stack below — a <Redirect> returned in place of that Stack
+  // would have no mounted navigator to redirect within.
+  useEffect(() => {
+    if (session && profile && !profile.onboarding_complete && session.user.app_metadata?.provider === 'email') {
+      router.replace('/(auth)/sign-up-location');
+    }
+  }, [session, profile]);
+
+  if (isLoading) return <LoadingSpinner full />;
+
+  if (session && profile?.onboarding_complete) {
+    if (profile.role === 'tradie') return <Redirect href="/(tradie)/home" />;
+    return <Redirect href="/(customer)/home" />;
   }
 
   return (
