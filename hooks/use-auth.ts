@@ -45,7 +45,16 @@ export function useAuth() {
   async function loadProfile(userId: string) {
     if (loadingUserId.current === userId) return;
     loadingUserId.current = userId;
-    setLoading(true);
+    // isLoading gates the entire app down to a spinner (RootLayout,
+    // AuthLayout, app/index.tsx all unmount their content while it's true).
+    // That's correct for the very first load, but loadProfile() also runs on
+    // every later auth event (e.g. a routine TOKEN_REFRESHED while the user
+    // is mid-interaction on some screen) — toggling isLoading for those too
+    // was yanking the whole app back to a spinner mid-session, which is what
+    // was causing screens to reset/crash out during normal use. Only the
+    // genuine first load (no profile yet) should touch isLoading.
+    const isInitialLoad = useAuthStore.getState().profile === null;
+    if (isInitialLoad) setLoading(true);
     try {
       const { data: profile } = await supabase
         .from('profiles')
@@ -67,7 +76,7 @@ export function useAuth() {
         setTradieProfile(tp ?? null);
       }
     } finally {
-      setLoading(false);
+      if (isInitialLoad) setLoading(false);
       loadingUserId.current = null;
     }
   }
