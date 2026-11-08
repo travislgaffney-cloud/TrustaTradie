@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to TrustaTradie</title>
+  </head>
+  <body style="margin:0; padding:0; background-color:#F3F4F6; font-family:Helvetica, Arial, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F3F4F6; padding:32px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF; border-radius:12px; overflow:hidden; max-width:480px;">
+            <tr>
+              <td style="background-color:#1B2D4F; padding:28px 32px; text-align:center;">
+                <span style="color:#FFFFFF; font-size:20px; font-weight:800; letter-spacing:0.2px;">TrustaTradie</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:36px 32px 24px 32px;">
+                <p style="margin:0 0 8px 0; color:#111827; font-size:22px; font-weight:800;">
+                  Welcome to TrustaTradie{{ if .Data.full_name }}, {{ .Data.full_name }}{{ end }}! 👋
+                </p>
+                <p style="margin:0; color:#4B5563; font-size:15px; line-height:22px;">
+                  We're glad you're here. Just one quick step before you get started —
+                  confirm that this is the right email address for your account.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 32px 36px 32px;" align="center">
+                <a href="{{ .ConfirmationURL }}"
+                   style="display:inline-block; background-color:#F97316; color:#FFFFFF; text-decoration:none; font-size:16px; font-weight:700; padding:14px 32px; border-radius:10px;">
+                  Confirm Email Address
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 32px 32px 32px;">
+                <p style="margin:0; color:#9CA3AF; font-size:13px; line-height:20px;">
+                  If the button above doesn't work, copy and paste this link into your browser:
+                  <br />
+                  <a href="{{ .ConfirmationURL }}" style="color:#F97316; word-break:break-all;">{{ .ConfirmationURL }}</a>
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px; background-color:#F9FAFB; border-top:1px solid #F0F0F0;">
+                <p style="margin:0; color:#9CA3AF; font-size:12px; line-height:18px;">
+                  Didn't sign up for TrustaTradie? You can safely ignore this email.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
