@@ -20,7 +20,11 @@ export default function ConfirmEmailScreen() {
   async function handleResend() {
     if (!email) return;
     setResending(true);
-    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: 'trustatradie://' },
+    });
     setResending(false);
 
     if (error) {

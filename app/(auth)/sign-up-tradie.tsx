@@ -73,6 +73,7 @@ export default function SignUpTradieScreen() {
       email: data.email,
       password: data.password,
       options: {
+        emailRedirectTo: 'trustatradie://',
         data: {
           full_name: data.fullName,
           phone: data.phone,
