@@ -7,7 +7,7 @@ export default function PrivacyPolicyPage() {
     <div className="min-h-screen bg-white">
       <div className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Trust-a-Tradie Privacy Policy</h1>
-        <p className="text-sm text-gray-500 mb-10">Effective date: 1 September 2026</p>
+        <p className="text-sm text-gray-500 mb-10">Effective date: 11 November 2026</p>
 
         <div className="space-y-10 text-gray-700 leading-relaxed">
           <section>
@@ -63,10 +63,13 @@ export default function PrivacyPolicyPage() {
 
             <h3 className="text-base font-semibold text-gray-900 mt-5 mb-2">Device &amp; diagnostic information</h3>
             <p>
-              If you send us a bug report, we collect the error message, a stack trace, the screen you were on,
-              app version, and basic device information (device model, OS name and version) to help us fix the
-              issue. We also store a push notification token so we can send you job, message, and payment
-              notifications.
+              We use automatic crash and error monitoring (via Sentry) that runs in the background while you use
+              the app. If the app crashes or encounters an error, it automatically collects the error message, a
+              stack trace, the screen you were on, app version, your account ID and role, and basic device
+              information (device model, OS name and version) so we can diagnose and fix the issue — this
+              happens automatically and does not require you to submit a report yourself. If you additionally
+              send us a manual bug report, we collect the same kind of information for that report. We also
+              store a push notification token so we can send you job, message, and payment notifications.
             </p>
           </section>
 
@@ -91,13 +94,26 @@ export default function PrivacyPolicyPage() {
               <li><span className="font-medium text-gray-900">TradeSafe</span>, our escrow payment provider, to process and hold job payments.</li>
               <li><span className="font-medium text-gray-900">Google</span>, if you choose to sign in with Google.</li>
               <li><span className="font-medium text-gray-900">Expo</span>, our push notification delivery service, to send you app notifications.</li>
+              <li><span className="font-medium text-gray-900">Sentry</span>, our crash and error monitoring provider, to automatically diagnose app crashes and errors.</li>
               <li>The other party to a job — a customer and tradie can see each other&apos;s name, photo, relevant job details, and messages while working together on a job.</li>
               <li>Law enforcement or regulators, where required by law.</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">4. Data Retention</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">4. International Data Transfers</h2>
+            <p>
+              Some of the providers listed above — including Supabase, Sentry, Expo, and Google — may store or
+              process your information on servers located outside South Africa. Where this happens, we rely on
+              those providers having appropriate safeguards in place (such as contractual data protection terms)
+              or on the transfer being necessary to perform our contract with you (for example, to provide
+              database, crash-reporting, or notification services the app depends on), as permitted under
+              section 72 of POPIA.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">5. Data Retention</h2>
             <p>
               We retain your information for as long as your account is active. If you delete your account (see
               below), we anonymize your personal information. Job, quote, transaction, payment, invoice, rating,
@@ -108,7 +124,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">5. Your Rights &amp; Deleting Your Account</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">6. Your Rights &amp; Deleting Your Account</h2>
             <p>
               Under South Africa&apos;s Protection of Personal Information Act (POPIA), you have the right to access,
               correct, and request deletion of your personal information. You can update most of your information
@@ -123,13 +139,21 @@ export default function PrivacyPolicyPage() {
               <li>Retains job, quote, transaction, payment, invoice, rating, and message records under an anonymized &quot;Deleted User&quot; profile, for the reasons described in Data Retention above.</li>
             </ul>
             <p className="mt-3">
-              If you have a complaint about how we handle your information, you may also contact South Africa&apos;s
-              Information Regulator.
+              If you have a complaint about how we handle your information, you may also contact South
+              Africa&apos;s Information Regulator at{" "}
+              <a href="mailto:POPIAComplaints@inforegulator.org.za" className="font-medium text-gray-900 underline">
+                POPIAComplaints@inforegulator.org.za
+              </a>{" "}
+              or via{" "}
+              <a href="https://inforegulator.org.za" className="font-medium text-gray-900 underline">
+                inforegulator.org.za
+              </a>
+              .
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">6. Security</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">7. Security</h2>
             <p>
               We use industry-standard measures to protect your information, including encryption in transit and
               database access controls that restrict each user to their own data. No method of transmission or
@@ -138,33 +162,10 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">7. Children&apos;s Privacy</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">8. Children&apos;s Privacy</h2>
             <p>
               Trust-a-Tradie is intended for users who are 18 years or older. We do not knowingly collect
               information from children.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">8. Intellectual Property &amp; Restrictions on Use</h2>
-            <p>
-              The App, including its software, design, graphics, logos, trademarks, and all content we provide
-              (excluding content users submit, such as job descriptions, photos, and reviews), is owned by
-              Trust-a-Tradie or our licensors and is protected by copyright, trademark, and other intellectual
-              property laws. We grant you a limited, personal, non-transferable licence to use the App for its
-              intended purpose. Except as that licence allows, you may not:
-            </p>
-            <ul className="list-disc pl-6 space-y-1.5 mt-2">
-              <li>Copy, reproduce, distribute, or create derivative works based on the App or its content.</li>
-              <li>Reverse engineer, decompile, disassemble, or otherwise attempt to derive the source code of the App.</li>
-              <li>Scrape, crawl, harvest, or use any automated means (bots, scripts, data-mining tools) to extract data from the App, including job listings, tradie profiles, pricing, or reviews.</li>
-              <li>Circumvent, disable, or interfere with security-related or access-control features of the App.</li>
-              <li>Use the Trust-a-Tradie name, logo, or branding without our prior written permission.</li>
-              <li>Build or offer a competing product or service using data or functionality obtained from the App.</li>
-            </ul>
-            <p className="mt-3">
-              We may suspend or terminate the account of, and pursue legal remedies against, anyone who violates
-              this section. See our Terms of Service for the full terms governing use of the App.
             </p>
           </section>
 
