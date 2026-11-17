@@ -87,6 +87,7 @@ export default function TradiesNearMeScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.filtersScroll}
         contentContainerStyle={styles.filters}
       >
         <Pressable
@@ -140,6 +141,7 @@ export default function TradiesNearMeScreen() {
 
       {/* Tradie list */}
       <ScrollView
+        style={styles.tradieScroll}
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
       >
@@ -227,6 +229,7 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 24, fontWeight: '800', color: '#fff' },
   headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.85)' },
   townFilter: { paddingHorizontal: 16, paddingTop: 12 },
+  filtersScroll: { flexGrow: 0, flexShrink: 0, height: 52 },
   filters: {
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -253,6 +256,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   sortText: { fontSize: 12, fontWeight: '600' },
+  tradieScroll: { flex: 1 },
   scroll: { padding: 16, gap: 12, flexGrow: 1 },
   card: {
     borderRadius: 14,
