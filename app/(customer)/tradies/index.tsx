@@ -171,7 +171,12 @@ export default function TradiesNearMeScreen() {
                       tradie.is_verified && <Badge label="✓" variant="success" />
                     )}
                   </View>
-                  <RatingStars rating={tradie.average_rating} showNumber size={13} />
+                  <View style={styles.ratingRow}>
+                    <RatingStars rating={tradie.average_rating} showNumber size={13} />
+                    <Text style={[styles.reviewCount, { color: colors.textSecondary }]}>
+                      ({tradie.total_reviews} review{tradie.total_reviews === 1 ? '' : 's'})
+                    </Text>
+                  </View>
                   {tradie.suburb && (
                     <Text style={[styles.meta, { color: colors.textSecondary }]}>{tradie.suburb}</Text>
                   )}
@@ -268,6 +273,8 @@ const styles = StyleSheet.create({
   cardInfo: { flex: 1, gap: 3 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   name: { fontSize: 16, fontWeight: '700' },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  reviewCount: { fontSize: 12 },
   meta: { fontSize: 12 },
   bio: { fontSize: 13, lineHeight: 18 },
   categories: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
