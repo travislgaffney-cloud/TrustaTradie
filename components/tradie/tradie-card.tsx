@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Colors } from '@/constants/theme';
 import { TRADE_CATEGORIES } from '@/constants/trade-categories';
+import { TRADE_ICON_SOURCES } from '@/constants/trade-icons';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import type { Profile, TradieProfile } from '@/types/database';
 import { RatingStars } from './rating-stars';
@@ -44,7 +45,7 @@ export function TradieCard({ profile, tradieProfile }: TradieCardProps) {
           {tradieProfile.categories.slice(0, 3).map((c) => {
             const cat = TRADE_CATEGORIES.find((t) => t.value === c);
             return cat ? (
-              <Badge key={c} label={`${cat.icon} ${cat.label}`} variant="default" />
+              <Badge key={c} label={cat.label} icon={TRADE_ICON_SOURCES[cat.value]} variant="default" />
             ) : null;
           })}
         </View>

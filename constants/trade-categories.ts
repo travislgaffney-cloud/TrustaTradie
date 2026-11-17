@@ -12,61 +12,51 @@ export type TradeCategory =
 export const TRADE_CATEGORIES: {
   value: TradeCategory;
   label: string;
-  icon: string;
   description: string;
 }[] = [
   {
     value: 'electrical',
     label: 'Electrical',
-    icon: '⚡',
     description: 'Wiring, installations, fault finding',
   },
   {
     value: 'building',
     label: 'Building',
-    icon: '🏗️',
     description: 'Construction, renovations, extensions',
   },
   {
     value: 'plumbing',
     label: 'Plumbing',
-    icon: '🔧',
     description: 'Pipes, leaks, geysers, drainage',
   },
   {
     value: 'landscaping',
     label: 'Landscaping',
-    icon: '🌿',
     description: 'Garden design, maintenance, irrigation',
   },
   {
     value: 'roofing',
     label: 'Roofing',
-    icon: '🏠',
     description: 'Repairs, waterproofing, new roofs',
   },
   {
     value: 'tiling',
     label: 'Tiling',
-    icon: '🔲',
     description: 'Floor tiles, wall tiles, grouting',
   },
   {
     value: 'flooring',
     label: 'Flooring',
-    icon: '🪵',
     description: 'Hardwood, laminate, vinyl, polishing',
   },
   {
     value: 'carpentry',
     label: 'Carpentry',
-    icon: '🪚',
     description: 'Cupboards, built-ins, furniture, woodwork',
   },
   {
     value: 'solar',
     label: 'Solar',
-    icon: '☀️',
     description: 'Solar panels, inverters, batteries, installation',
   },
 ];

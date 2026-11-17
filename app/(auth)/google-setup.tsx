@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { KeyboardAvoidingView } from '@/components/ui/keyboard-avoiding-view';
+import { TradeIcon } from '@/components/ui/trade-icon';
 import { UserTypeSelector } from '@/components/auth/user-type-selector';
 import { Brand, Colors } from '@/constants/theme';
 import { TRADE_CATEGORIES, type TradeCategory } from '@/constants/trade-categories';
@@ -147,7 +148,7 @@ export default function GoogleSetupScreen() {
                         },
                       ]}
                     >
-                      <Text style={styles.catIcon}>{cat.icon}</Text>
+                      <TradeIcon category={cat.value} size={18} />
                       <Text style={[styles.catLabel, { color: isSelected ? Brand.primaryDark : colors.text }]}>
                         {cat.label}
                       </Text>

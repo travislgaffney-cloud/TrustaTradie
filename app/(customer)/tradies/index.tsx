@@ -13,7 +13,9 @@ import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { TradeIcon } from '@/components/ui/trade-icon';
 import { TRADE_CATEGORIES, type TradeCategory } from '@/constants/trade-categories';
+import { TRADE_ICON_SOURCES } from '@/constants/trade-icons';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { startDirectConversation } from '@/hooks/use-messages';
@@ -111,8 +113,9 @@ export default function TradiesNearMeScreen() {
               },
             ]}
           >
+            <TradeIcon category={cat.value} size={16} />
             <Text style={[styles.filterText, { color: selectedCategory === cat.value ? Brand.primaryDark : colors.textSecondary }]}>
-              {cat.icon} {cat.label}
+              {cat.label}
             </Text>
           </Pressable>
         ))}
@@ -192,7 +195,7 @@ export default function TradiesNearMeScreen() {
               <View style={styles.categories}>
                 {tradie.categories.slice(0, 3).map((c) => {
                   const cat = TRADE_CATEGORIES.find((t) => t.value === c);
-                  return cat ? <Badge key={c} label={`${cat.icon} ${cat.label}`} /> : null;
+                  return cat ? <Badge key={c} label={cat.label} icon={TRADE_ICON_SOURCES[cat.value]} /> : null;
                 })}
                 {tradie.categories.length > 3 && (
                   <Badge label={`+${tradie.categories.length - 3}`} />
@@ -242,6 +245,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     borderWidth: 1,
     borderRadius: 20,
     paddingHorizontal: 12,

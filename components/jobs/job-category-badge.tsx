@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { TradeIcon } from '@/components/ui/trade-icon';
 import { Brand } from '@/constants/theme';
 import { TRADE_CATEGORIES, type TradeCategory } from '@/constants/trade-categories';
 
@@ -12,7 +13,7 @@ export function JobCategoryBadge({ category }: JobCategoryBadgeProps) {
   if (!cat) return null;
   return (
     <View style={styles.badge}>
-      <Text style={styles.icon}>{cat.icon}</Text>
+      <TradeIcon category={cat.value} size={14} />
       <Text style={styles.label}>{cat.label}</Text>
     </View>
   );
@@ -29,6 +30,5 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignSelf: 'flex-start',
   },
-  icon: { fontSize: 14 },
   label: { fontSize: 12, fontWeight: '600', color: Brand.primaryDark },
 });

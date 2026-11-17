@@ -4,6 +4,7 @@ import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } fr
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { StepIndicator } from '@/components/ui/step-indicator';
+import { TradeIcon } from '@/components/ui/trade-icon';
 import { Colors } from '@/constants/theme';
 import { TRADE_CATEGORIES } from '@/constants/trade-categories';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -79,7 +80,12 @@ export default function PostJobReviewScreen() {
           )}
 
           <View style={styles.row}>
-            {category && <Text style={styles.catBadge}>{category.icon} {category.label}</Text>}
+            {category && (
+              <View style={styles.catBadge}>
+                <TradeIcon category={category.value} size={14} />
+                <Text style={styles.catBadgeText}>{category.label}</Text>
+              </View>
+            )}
           </View>
 
           <Text style={[styles.jobTitle, { color: colors.text }]}>{draft.title}</Text>
@@ -122,13 +128,18 @@ const styles = StyleSheet.create({
   image: { width: '100%', height: 180, resizeMode: 'cover' },
   row: { flexDirection: 'row', padding: 14, paddingBottom: 8 },
   catBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: '#FED7AA',
-    color: '#c2410c',
-    fontSize: 12,
-    fontWeight: '600',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
+  },
+  catBadgeText: {
+    color: '#c2410c',
+    fontSize: 12,
+    fontWeight: '600',
   },
   jobTitle: { fontSize: 18, fontWeight: '700', paddingHorizontal: 14 },
   desc: { fontSize: 14, lineHeight: 20, paddingHorizontal: 14 },

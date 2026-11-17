@@ -3,6 +3,7 @@ import { Pressable, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, 
 import { JobCard } from '@/components/jobs/job-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { TradeIcon } from '@/components/ui/trade-icon';
 import { TRADE_CATEGORIES, type TradeCategory } from '@/constants/trade-categories';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -54,8 +55,9 @@ export default function TradieJobsScreen() {
               },
             ]}
           >
+            <TradeIcon category={cat.value} size={16} />
             <Text style={[styles.filterText, { color: selectedCategory === cat.value ? Brand.primaryDark : colors.textSecondary }]}>
-              {cat.icon} {cat.label}
+              {cat.label}
             </Text>
           </Pressable>
         ))}
@@ -91,6 +93,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     borderWidth: 1,
     borderRadius: 20,
     paddingHorizontal: 12,

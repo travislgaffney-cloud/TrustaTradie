@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Brand, Colors } from '@/constants/theme';
 import { TRADE_CATEGORIES } from '@/constants/trade-categories';
+import { TRADE_ICON_SOURCES } from '@/constants/trade-icons';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePortfolioImages, useTradieRatings } from '@/hooks/use-tradie-profile';
 import { supabase } from '@/lib/supabase';
@@ -151,7 +152,7 @@ export default function PublicTradieProfileScreen() {
           {/* Trade categories */}
           <View style={styles.categories}>
             {categories.map((cat) => cat && (
-              <Badge key={cat.value} label={`${cat.icon} ${cat.label}`} />
+              <Badge key={cat.value} label={cat.label} icon={TRADE_ICON_SOURCES[cat.value]} />
             ))}
           </View>
 

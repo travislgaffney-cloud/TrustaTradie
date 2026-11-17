@@ -8,6 +8,7 @@ import { TownSelector } from '@/components/tradie/town-selector';
 import { KeyboardAvoidingView } from '@/components/ui/keyboard-avoiding-view';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TradeIcon } from '@/components/ui/trade-icon';
 import { Colors, Brand } from '@/constants/theme';
 import { TRADE_CATEGORIES, type TradeCategory } from '@/constants/trade-categories';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -125,7 +126,7 @@ export default function EditProfileScreen() {
                   onPress={() => toggleCat(cat.value)}
                   style={[styles.chip, { borderColor: sel ? Brand.primary : colors.border, backgroundColor: sel ? Brand.primaryLight : colors.surface }]}
                 >
-                  <Text style={styles.chipIcon}>{cat.icon}</Text>
+                  <TradeIcon category={cat.value} size={18} />
                   <Text style={[styles.chipLabel, { color: sel ? Brand.primaryDark : colors.text }]}>{cat.label}</Text>
                 </Pressable>
               );

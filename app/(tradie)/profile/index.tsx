@@ -13,6 +13,7 @@ import { PortfolioGrid } from '@/components/tradie/portfolio-grid';
 import { RatingStars } from '@/components/tradie/rating-stars';
 import { ReviewCard } from '@/components/tradie/review-card';
 import { TRADE_CATEGORIES } from '@/constants/trade-categories';
+import { TRADE_ICON_SOURCES } from '@/constants/trade-icons';
 import { Brand, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTradieDocuments, usePortfolioImages, useTradieRatings } from '@/hooks/use-tradie-profile';
@@ -173,7 +174,7 @@ export default function TradieProfileScreen() {
           {categories.length > 0 && (
             <View style={styles.categories}>
               {categories.map((cat) => cat && (
-                <Badge key={cat.value} label={`${cat.icon} ${cat.label}`} />
+                <Badge key={cat.value} label={cat.label} icon={TRADE_ICON_SOURCES[cat.value]} />
               ))}
             </View>
           )}

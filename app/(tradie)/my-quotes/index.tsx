@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Avatar } from '@/components/ui/avatar';
 import { DateTimePickerModal } from '@/components/ui/date-time-picker-modal';
+import { TradeIcon } from '@/components/ui/trade-icon';
 import { Brand, Colors } from '@/constants/theme';
 import { TRADE_CATEGORIES } from '@/constants/trade-categories';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -185,7 +186,7 @@ export default function MyQuotesAndJobsScreen() {
       >
         <View style={styles.cardTop}>
           <View style={styles.jobRow}>
-            {cat && <Text style={styles.catIcon}>{cat.icon}</Text>}
+            {cat && <TradeIcon category={cat.value} size={18} />}
             <Text style={[styles.jobTitle, { color: colors.text }]} numberOfLines={1}>
               {v.job?.title ?? 'Job'}
             </Text>
@@ -230,7 +231,7 @@ export default function MyQuotesAndJobsScreen() {
         </View>
 
         <View style={styles.jobRow}>
-          {cat && <Text style={styles.catIcon}>{cat.icon}</Text>}
+          {cat && <TradeIcon category={cat.value} size={18} />}
           <Text style={[styles.jobTitle, { color: colors.text }]} numberOfLines={1}>
             {q.job?.title ?? 'Job'}
           </Text>
@@ -304,7 +305,7 @@ export default function MyQuotesAndJobsScreen() {
         </View>
 
         <View style={styles.jobRow}>
-          {cat && <Text style={styles.catIcon}>{cat.icon}</Text>}
+          {cat && <TradeIcon category={cat.value} size={18} />}
           <Text style={[styles.jobTitle, { color: colors.text }]} numberOfLines={2}>
             {job.description}
           </Text>

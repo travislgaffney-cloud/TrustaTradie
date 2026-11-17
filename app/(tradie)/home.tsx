@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Avatar } from '@/components/ui/avatar';
+import { TradeIcon } from '@/components/ui/trade-icon';
 import { Brand, Colors } from '@/constants/theme';
 import { TRADE_CATEGORIES } from '@/constants/trade-categories';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -23,10 +24,6 @@ function greeting(name: string) {
   const h = new Date().getHours();
   const time = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
   return `Good ${time}, ${name.split(' ')[0]}`;
-}
-
-function categoryIcon(cat: string) {
-  return TRADE_CATEGORIES.find((c) => c.value === cat)?.icon ?? '🔧';
 }
 
 function categoryLabel(cat: string) {
@@ -200,7 +197,7 @@ export default function TradieHomeScreen() {
                 style={[styles.jobCard, { backgroundColor: colors.surface, borderColor: Brand.primary }]}
               >
                 <View style={styles.jobCardRow}>
-                  <Text style={styles.jobIcon}>{categoryIcon(job.category)}</Text>
+                  <TradeIcon category={job.category} size={26} />
                   <View style={styles.jobCardText}>
                     <Text style={[styles.jobTitle, { color: colors.text }]} numberOfLines={1}>{job.title}</Text>
                     <Text style={[styles.jobMeta, { color: colors.textSecondary }]}>
