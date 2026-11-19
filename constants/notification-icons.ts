@@ -15,4 +15,6 @@ export const NOTIFICATION_ICON_SOURCES: Partial<Record<string, ImageSourcePropTy
   // a future type carrying a scheduled date should use this icon too.
   job_started: require('@/assets/images/notifications/calendar.png'),
   site_visit_requested: require('@/assets/images/notifications/calendar.png'),
+
+  new_quote_received: require('@/assets/images/notifications/hard-hat.png'),
 };

@@ -15,7 +15,6 @@ import type { Notification } from '@/types/database';
 
 const TYPE_ICONS: Record<string, string> = {
   new_job_nearby: '📍',
-  new_quote_received: '💬',
   quote_rejected: '❌',
   payment_released: '💰',
   new_message: '✉️',
