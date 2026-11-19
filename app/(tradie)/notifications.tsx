@@ -2,11 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { router } from 'expo-router';
 import React, { useCallback, useRef } from 'react';
-import { FlatList, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Brand, Colors } from '@/constants/theme';
+import { NOTIFICATION_ICON_SOURCES } from '@/constants/notification-icons';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useNotifications } from '@/hooks/use-notifications';
 import { getNotificationRoute } from '@/lib/notifications';
@@ -15,9 +16,7 @@ import type { Notification } from '@/types/database';
 const TYPE_ICONS: Record<string, string> = {
   new_job_nearby: '📍',
   new_quote_received: '💬',
-  quote_accepted: '✅',
   quote_rejected: '❌',
-  job_completed: '🎉',
   payment_released: '💰',
   new_message: '✉️',
   rating_received: '⭐',
@@ -69,7 +68,11 @@ function NotificationRow({
           { borderBottomColor: colors.border, backgroundColor: item.is_read ? colors.background : colors.surface },
         ]}
       >
-        <Text style={styles.icon}>{TYPE_ICONS[item.type] ?? '🔔'}</Text>
+        {NOTIFICATION_ICON_SOURCES[item.type] ? (
+          <Image source={NOTIFICATION_ICON_SOURCES[item.type]} style={styles.iconImage} />
+        ) : (
+          <Text style={styles.icon}>{TYPE_ICONS[item.type] ?? '🔔'}</Text>
+        )}
         <View style={styles.itemContent}>
           <Text style={[styles.itemTitle, { color: colors.text }]}>{item.title}</Text>
           <Text style={[styles.itemBody, { color: colors.textSecondary }]}>{item.body}</Text>
@@ -141,6 +144,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   icon: { fontSize: 24, marginTop: 2 },
+  iconImage: { width: 26, height: 26, marginTop: 2 },
   itemContent: { flex: 1, gap: 2 },
   itemTitle: { fontSize: 14, fontWeight: '600' },
   itemBody: { fontSize: 13, lineHeight: 18 },
