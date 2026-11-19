@@ -20,7 +20,6 @@ const TYPE_ICONS: Record<string, string> = {
   payment_released: '💰',
   new_message: '✉️',
   rating_received: '⭐',
-  site_visit_requested: '📅',
 };
 
 function handleNotificationPress(n: Notification) {
