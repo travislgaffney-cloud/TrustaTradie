@@ -1,34 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-
-const APP_STORE_URL = "https://apps.apple.com/app/id6828108001";
-const PLAY_STORE_URL =
-  "https://play.google.com/store/apps/details?id=com.trustatradie.app";
-
-function StoreButtons({ className = "" }: { className?: string }) {
-  return (
-    <div className={`flex flex-wrap gap-3 ${className}`}>
-      <a href={APP_STORE_URL} className="inline-flex items-center">
-        <Image
-          src="/app-store-badge.svg"
-          alt="Download on the App Store"
-          width={167}
-          height={56}
-          className="h-14 w-auto"
-        />
-      </a>
-      <a href={PLAY_STORE_URL} className="inline-flex items-center">
-        <Image
-          src="/google-play-badge.svg"
-          alt="Get it on Google Play"
-          width={189}
-          height={56}
-          className="h-14 w-auto"
-        />
-      </a>
-    </div>
-  );
-}
+import { APP_STORE_URL, StoreButtons } from "@/components/store-buttons";
+import { SiteFooter } from "@/components/site-footer";
 
 const CUSTOMER_STEPS = [
   {
@@ -108,12 +81,12 @@ export default function HomePage() {
             </span>
           </div>
           <nav className="hidden items-center gap-8 text-sm font-medium text-gray-600 sm:flex">
-            <a href="#customers" className="hover:text-[#1B2D4F]">
+            <Link href="/guide/customers" className="hover:text-[#1B2D4F]">
               For Customers
-            </a>
-            <a href="#tradies" className="hover:text-[#1B2D4F]">
+            </Link>
+            <Link href="/guide/tradies" className="hover:text-[#1B2D4F]">
               For Tradies
-            </a>
+            </Link>
             <a href="#features" className="hover:text-[#1B2D4F]">
               Features
             </a>
@@ -183,6 +156,14 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+        <div className="mt-10 text-center">
+          <Link
+            href="/guide/customers"
+            className="text-sm font-semibold text-[#F97316] hover:text-[#EA6C0A]"
+          >
+            Read the full step-by-step guide →
+          </Link>
+        </div>
       </section>
 
       {/* For tradies */}
@@ -213,6 +194,14 @@ export default function HomePage() {
                 </p>
               </div>
             ))}
+          </div>
+          <div className="mt-10 text-center">
+            <Link
+              href="/guide/tradies"
+              className="text-sm font-semibold text-[#F97316] hover:text-[#EA6C0A]"
+            >
+              See how to sign up →
+            </Link>
           </div>
         </div>
       </section>
@@ -254,26 +243,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-100 py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-sm text-gray-500 sm:flex-row">
-          <p>&copy; {new Date().getFullYear()} TrustaTradie. All rights reserved.</p>
-          <div className="flex gap-6">
-            <Link href="/privacy" className="hover:text-[#1B2D4F]">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="hover:text-[#1B2D4F]">
-              Terms of Service
-            </Link>
-            <a
-              href="mailto:admin@trustatradie.co.za"
-              className="hover:text-[#1B2D4F]"
-            >
-              Contact
-            </a>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
