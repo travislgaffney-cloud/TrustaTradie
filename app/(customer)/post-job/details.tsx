@@ -97,7 +97,7 @@ export default function PostJobDetailsScreen() {
                   },
                 ]}
               >
-                <TradeIcon category={cat.value} size={18} />
+                <TradeIcon category={cat.value} size={32} />
                 <Text style={[styles.chipLabel, { color: isSelected ? Brand.primaryDark : colors.text }]}>
                   {cat.label}
                 </Text>

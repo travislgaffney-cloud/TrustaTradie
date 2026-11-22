@@ -82,7 +82,7 @@ export default function PostJobReviewScreen() {
           <View style={styles.row}>
             {category && (
               <View style={styles.catBadge}>
-                <TradeIcon category={category.value} size={14} />
+                <TradeIcon category={category.value} size={24} />
                 <Text style={styles.catBadgeText}>{category.label}</Text>
               </View>
             )}

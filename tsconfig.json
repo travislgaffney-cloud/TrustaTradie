@@ -16,6 +16,7 @@
     "node_modules",
     "supabase/functions",
     "__tests__",
-    "admin"
+    "admin",
+    "website"
   ]
 }

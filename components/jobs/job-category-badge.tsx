@@ -13,7 +13,7 @@ export function JobCategoryBadge({ category }: JobCategoryBadgeProps) {
   if (!cat) return null;
   return (
     <View style={styles.badge}>
-      <TradeIcon category={cat.value} size={14} />
+      <TradeIcon category={cat.value} size={24} />
       <Text style={styles.label}>{cat.label}</Text>
     </View>
   );

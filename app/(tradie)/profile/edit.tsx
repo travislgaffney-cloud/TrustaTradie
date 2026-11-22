@@ -126,7 +126,7 @@ export default function EditProfileScreen() {
                   onPress={() => toggleCat(cat.value)}
                   style={[styles.chip, { borderColor: sel ? Brand.primary : colors.border, backgroundColor: sel ? Brand.primaryLight : colors.surface }]}
                 >
-                  <TradeIcon category={cat.value} size={18} />
+                  <TradeIcon category={cat.value} size={32} />
                   <Text style={[styles.chipLabel, { color: sel ? Brand.primaryDark : colors.text }]}>{cat.label}</Text>
                 </Pressable>
               );

@@ -129,7 +129,7 @@ export default function SignUpTradieScreen() {
                     { borderColor: isSelected ? Brand.primary : colors.border, backgroundColor: isSelected ? Brand.primaryLight : colors.surface },
                   ]}
                 >
-                  <TradeIcon category={cat.value} size={18} />
+                  <TradeIcon category={cat.value} size={32} />
                   <Text style={[styles.catLabel, { color: isSelected ? Brand.primaryDark : colors.text }]}>
                     {cat.label}
                   </Text>

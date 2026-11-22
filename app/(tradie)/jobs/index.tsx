@@ -55,7 +55,7 @@ export default function TradieJobsScreen() {
               },
             ]}
           >
-            <TradeIcon category={cat.value} size={16} />
+            <TradeIcon category={cat.value} size={28} />
             <Text style={[styles.filterText, { color: selectedCategory === cat.value ? Brand.primaryDark : colors.textSecondary }]}>
               {cat.label}
             </Text>

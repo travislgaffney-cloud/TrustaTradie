@@ -148,7 +148,7 @@ export default function GoogleSetupScreen() {
                         },
                       ]}
                     >
-                      <TradeIcon category={cat.value} size={18} />
+                      <TradeIcon category={cat.value} size={32} />
                       <Text style={[styles.catLabel, { color: isSelected ? Brand.primaryDark : colors.text }]}>
                         {cat.label}
                       </Text>

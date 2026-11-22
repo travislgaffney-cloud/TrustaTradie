@@ -197,7 +197,7 @@ export default function TradieHomeScreen() {
                 style={[styles.jobCard, { backgroundColor: colors.surface, borderColor: Brand.primary }]}
               >
                 <View style={styles.jobCardRow}>
-                  <TradeIcon category={job.category} size={26} />
+                  <TradeIcon category={job.category} size={40} />
                   <View style={styles.jobCardText}>
                     <Text style={[styles.jobTitle, { color: colors.text }]} numberOfLines={1}>{job.title}</Text>
                     <Text style={[styles.jobMeta, { color: colors.textSecondary }]}>

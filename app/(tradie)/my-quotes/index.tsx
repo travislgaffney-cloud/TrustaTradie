@@ -186,7 +186,7 @@ export default function MyQuotesAndJobsScreen() {
       >
         <View style={styles.cardTop}>
           <View style={styles.jobRow}>
-            {cat && <TradeIcon category={cat.value} size={18} />}
+            {cat && <TradeIcon category={cat.value} size={30} />}
             <Text style={[styles.jobTitle, { color: colors.text }]} numberOfLines={1}>
               {v.job?.title ?? 'Job'}
             </Text>
@@ -231,7 +231,7 @@ export default function MyQuotesAndJobsScreen() {
         </View>
 
         <View style={styles.jobRow}>
-          {cat && <TradeIcon category={cat.value} size={18} />}
+          {cat && <TradeIcon category={cat.value} size={30} />}
           <Text style={[styles.jobTitle, { color: colors.text }]} numberOfLines={1}>
             {q.job?.title ?? 'Job'}
           </Text>
@@ -305,7 +305,7 @@ export default function MyQuotesAndJobsScreen() {
         </View>
 
         <View style={styles.jobRow}>
-          {cat && <TradeIcon category={cat.value} size={18} />}
+          {cat && <TradeIcon category={cat.value} size={30} />}
           <Text style={[styles.jobTitle, { color: colors.text }]} numberOfLines={2}>
             {job.description}
           </Text>

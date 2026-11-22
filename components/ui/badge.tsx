@@ -7,6 +7,7 @@ interface BadgeProps {
   label: string;
   variant?: BadgeVariant;
   icon?: ImageSourcePropType;
+  iconSize?: number;
 }
 
 const VARIANT_STYLES: Record<BadgeVariant, { bg: string; text: string }> = {
@@ -19,7 +20,7 @@ const VARIANT_STYLES: Record<BadgeVariant, { bg: string; text: string }> = {
   gold: { bg: '#fef3c7', text: '#92400e' },
 };
 
-export function Badge({ label, variant = 'default', icon }: BadgeProps) {
+export function Badge({ label, variant = 'default', icon, iconSize = 26 }: BadgeProps) {
   const vs = VARIANT_STYLES[variant];
   return (
     <View
@@ -29,7 +30,13 @@ export function Badge({ label, variant = 'default', icon }: BadgeProps) {
         variant === 'outline' && styles.outlined,
       ]}
     >
-      {icon && <Image source={icon} style={styles.icon} resizeMode="cover" />}
+      {icon && (
+        <Image
+          source={icon}
+          style={[styles.icon, { width: iconSize, height: iconSize, borderRadius: iconSize * 0.22 }]}
+          resizeMode="cover"
+        />
+      )}
       <Text style={[styles.text, { color: vs.text }]}>{label}</Text>
     </View>
   );
@@ -39,13 +46,13 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
     alignSelf: 'flex-start',
   },
   outlined: { borderWidth: 1, borderColor: '#cbd5e1' },
-  icon: { width: 14, height: 14, borderRadius: 3 },
+  icon: {},
   text: { fontSize: 12, fontWeight: '500' },
 });
