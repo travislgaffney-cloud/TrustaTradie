@@ -56,7 +56,10 @@ function showGoldExplanation() {
 }
 
 function showVerifiedExplanation() {
-  Alert.alert('✓ Verified', 'Trust-a-Tradie admin has verified this tradie’s identity.');
+  Alert.alert(
+    '✓ Verified',
+    'This tradie has passed TrustaTradie’s verification checks: a certified copy of their ID, their CIPC business registration, and their trade certificate were all independently checked. This confirms their identity and qualifications — it doesn’t guarantee the quality of their work.'
+  );
 }
 
 export default function PublicTradieProfileScreen() {

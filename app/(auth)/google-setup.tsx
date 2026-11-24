@@ -165,6 +165,16 @@ export default function GoogleSetupScreen() {
                   amount minus TrustaTradie&apos;s commission) in one payment.
                 </Text>
               </View>
+
+              <View style={styles.verifyNotice}>
+                <Text style={styles.verifyNoticeTitle}>✓ Want the Verified badge?</Text>
+                <Text style={styles.verifyNoticeBody}>
+                  After signing up, you can apply to get verified by uploading a certified
+                  copy of your ID, your CIPC registration certificate, and your trade
+                  certificate. Verified tradies get a trust badge on their profile and appear
+                  first in search results — ahead of unverified tradies.
+                </Text>
+              </View>
             </>
           )}
 
@@ -206,6 +216,9 @@ const styles = StyleSheet.create({
   payoutNotice: { backgroundColor: '#dbeafe', borderRadius: 10, padding: 14, gap: 4, marginTop: 12 },
   payoutNoticeTitle: { fontSize: 14, fontWeight: '700', color: '#1e40af' },
   payoutNoticeBody: { fontSize: 13, lineHeight: 19, color: '#1e40af' },
+  verifyNotice: { backgroundColor: '#dcfce7', borderRadius: 10, padding: 14, gap: 4, marginTop: 12 },
+  verifyNoticeTitle: { fontSize: 14, fontWeight: '700', color: '#166534' },
+  verifyNoticeBody: { fontSize: 13, lineHeight: 19, color: '#166534' },
   errorBox: { borderRadius: 8, padding: 12 },
   footer: { marginTop: 'auto', paddingTop: 16 },
 });
