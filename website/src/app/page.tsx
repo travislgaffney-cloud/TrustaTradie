@@ -35,7 +35,7 @@ const TRADIE_STEPS = [
   {
     icon: "💰",
     title: "Get paid",
-    body: "Once the customer confirms the job's complete, your payout lands straight in your bank account.",
+    body: "No deposits — the full amount is held in escrow, and once the customer confirms the job's complete, your portion lands straight in your bank account in one payment.",
   },
 ];
 

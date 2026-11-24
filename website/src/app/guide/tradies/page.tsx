@@ -39,6 +39,11 @@ const STEPS = [
     body: "This is where your payouts land once a customer confirms a job is complete.",
   },
   {
+    icon: "💰",
+    title: "How you get paid",
+    body: "There's no deposit — the full quoted amount is held securely in escrow from the moment a customer accepts your quote. Once you mark the job complete and the customer confirms, you're paid out your portion (the quoted amount minus TrustaTradie's commission) in one payment.",
+  },
+  {
     icon: "✅",
     title: "Get verified & start quoting",
     body: "Once our team reviews your documents, you're ready to browse nearby jobs, request site visits, and start sending quotes.",

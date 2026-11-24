@@ -156,6 +156,15 @@ export default function GoogleSetupScreen() {
                   );
                 })}
               </View>
+
+              <View style={styles.payoutNotice}>
+                <Text style={styles.payoutNoticeTitle}>💰 How you get paid</Text>
+                <Text style={styles.payoutNoticeBody}>
+                  There&apos;s no deposit — the full quoted amount is held securely in escrow.
+                  Once a job is marked complete, you&apos;re paid out your portion (the quoted
+                  amount minus TrustaTradie&apos;s commission) in one payment.
+                </Text>
+              </View>
             </>
           )}
 
@@ -194,6 +203,9 @@ const styles = StyleSheet.create({
   },
   catIcon: { fontSize: 18 },
   catLabel: { fontSize: 14, fontWeight: '500' },
+  payoutNotice: { backgroundColor: '#dbeafe', borderRadius: 10, padding: 14, gap: 4, marginTop: 12 },
+  payoutNoticeTitle: { fontSize: 14, fontWeight: '700', color: '#1e40af' },
+  payoutNoticeBody: { fontSize: 13, lineHeight: 19, color: '#1e40af' },
   errorBox: { borderRadius: 8, padding: 12 },
   footer: { marginTop: 'auto', paddingTop: 16 },
 });
