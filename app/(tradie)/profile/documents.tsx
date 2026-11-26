@@ -15,10 +15,10 @@ import { getSignedUrl, uploadPrivateFile } from '@/lib/storage';
 import { useAuthStore } from '@/store/auth-store';
 import type { DocumentType } from '@/types/database';
 
-const DOC_TYPE_OPTIONS: { value: DocumentType; label: string; goldRequired?: boolean }[] = [
-  { value: 'id_document', label: 'ID Document', goldRequired: true },
-  { value: 'certificate', label: 'Qualification Certificate', goldRequired: true },
-  { value: 'association', label: 'Association Membership', goldRequired: true },
+const DOC_TYPE_OPTIONS: { value: DocumentType; label: string }[] = [
+  { value: 'id_document', label: 'ID Document' },
+  { value: 'certificate', label: 'Qualification Certificate' },
+  { value: 'association', label: 'Association Membership' },
   { value: 'licence', label: 'Licence' },
   { value: 'insurance', label: 'Insurance' },
   { value: 'other', label: 'Other' },
@@ -79,7 +79,9 @@ export default function DocumentsScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={[styles.goldBanner, { backgroundColor: '#fffbeb', borderColor: '#fcd34d' }]}>
           <Text style={styles.goldBannerText}>
-            ★ Upload a verified ID document, qualification certificate, and association membership to earn the Gold TT Badge — the highest level of verified on Trust-a-Tradie.
+            Upload your licence, insurance, and other documents here for Trust-a-Tradie admin to review.
+            Looking for the ✓ Verified badge instead? That&apos;s a separate, automated check — head to
+            Profile → Get Verified.
           </Text>
         </View>
 
@@ -99,7 +101,7 @@ export default function DocumentsScreen() {
                 ]}
               >
                 <Text style={[styles.typeChipText, type === opt.value && styles.typeChipTextActive]}>
-                  {opt.goldRequired ? '★ ' : ''}{opt.label}
+                  {opt.label}
                 </Text>
               </Pressable>
             ))}

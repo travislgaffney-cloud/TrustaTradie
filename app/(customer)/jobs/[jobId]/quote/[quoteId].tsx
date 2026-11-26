@@ -98,7 +98,7 @@ export default function QuoteDetailScreen() {
               uri={quote.tradie?.avatar_url}
               name={quote.tradie?.full_name}
               size={52}
-              verified={quote.tradie_profile?.gold_verified ? 'gold' : quote.tradie_profile?.is_verified}
+              verified={quote.tradie_profile?.is_verified || quote.tradie_profile?.gold_verified}
             />
             <View style={styles.tradieInfo}>
               <Text style={[styles.tradieName, { color: colors.text }]}>

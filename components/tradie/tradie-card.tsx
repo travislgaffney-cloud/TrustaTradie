@@ -24,14 +24,12 @@ export function TradieCard({ profile, tradieProfile }: TradieCardProps) {
     <Pressable onPress={() => router.push(`/tradie/${profile.id}`)}>
       <Card elevated style={styles.card}>
         <View style={styles.header}>
-          <Avatar uri={profile.avatar_url} name={profile.full_name} size={52} verified={tradieProfile.gold_verified ? 'gold' : tradieProfile.is_verified} />
+          <Avatar uri={profile.avatar_url} name={profile.full_name} size={52} verified={tradieProfile.is_verified || tradieProfile.gold_verified} />
           <View style={styles.info}>
             <View style={styles.nameRow}>
               <Text style={[styles.name, { color: colors.text }]}>{profile.full_name}</Text>
-              {tradieProfile.gold_verified ? (
-                <Badge label="★ Gold Verified" variant="gold" />
-              ) : (
-                tradieProfile.is_verified && <Badge label="✓ Verified" variant="success" />
+              {(tradieProfile.is_verified || tradieProfile.gold_verified) && (
+                <Badge label="✓ Verified" variant="success" />
               )}
             </View>
             <RatingStars rating={tradieProfile.average_rating} showNumber />

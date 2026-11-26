@@ -31,7 +31,7 @@ const STEPS = [
   {
     icon: "🪪",
     title: "Upload your documents",
-    body: "An ID document, licence, and insurance are required to get verified. Add a qualification certificate and proof of association membership too if you want the ★ Gold Verified badge — the highest level of verification on TrustaTradie.",
+    body: "Add your licence, insurance, and any other documents for Trust-a-Tradie admin to review and build trust with customers.",
   },
   {
     icon: "🏦",
@@ -44,9 +44,14 @@ const STEPS = [
     body: "There's no deposit — the full quoted amount is held securely in escrow from the moment a customer accepts your quote. Once you mark the job complete and the customer confirms, you're paid out your portion (the quoted amount minus TrustaTradie's commission) in one payment.",
   },
   {
-    icon: "✅",
-    title: "Get verified & start quoting",
-    body: "Once our team reviews your documents, you're ready to browse nearby jobs, request site visits, and start sending quotes.",
+    icon: "✓",
+    title: "Get Verified (optional)",
+    body: "For a once-off R100 fee, we automatically check your ID number, CIPC registration, and bank account. Verified tradies get a trust badge and appear first in search results.",
+  },
+  {
+    icon: "🔍",
+    title: "Start browsing & quoting",
+    body: "You're ready to browse nearby jobs, request site visits, and start sending quotes.",
   },
 ];
 

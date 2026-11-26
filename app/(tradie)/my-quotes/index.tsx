@@ -391,7 +391,7 @@ export default function MyQuotesAndJobsScreen() {
           name={profile?.full_name}
           size={40}
           color="#38BDF8"
-          verified={tradieProfile?.gold_verified ? 'gold' : tradieProfile?.is_verified}
+          verified={tradieProfile?.is_verified || tradieProfile?.gold_verified}
         />
       </View>
 

@@ -3,6 +3,11 @@
 // plain object or a single-element array depending on how it infers the
 // relationship cardinality — normalized here once instead of guessed at
 // each call site.
+//
+// gold_verified is a retired tier (see the paid VerifyNow-based
+// verification system) — kept only so a tradie who'd already earned it
+// doesn't lose their badge. is_verified OR gold_verified is now the single
+// "Verified" signal everywhere.
 export interface TradieVerificationFields {
   is_verified: boolean;
   gold_verified: boolean;
@@ -19,8 +24,8 @@ export function normalizeTradieVerification(
 // directly from a joined tradie_profiles row.
 export function avatarVerifiedProp(
   joined: TradieVerificationFields | TradieVerificationFields[] | null | undefined
-): boolean | 'gold' | undefined {
+): boolean | undefined {
   const tp = normalizeTradieVerification(joined);
   if (!tp) return undefined;
-  return tp.gold_verified ? 'gold' : tp.is_verified;
+  return tp.is_verified || tp.gold_verified;
 }

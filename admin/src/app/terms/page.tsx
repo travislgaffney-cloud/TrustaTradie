@@ -60,11 +60,10 @@ export default function TermsOfServicePage() {
               <li>
                 Any licences, insurance, certifications, VAT, or CIPC information you provide must be accurate
                 and current. We may remove documents or suspend accounts that provide false information. Where
-                we show a &quot;Verified&quot; or &quot;Gold Verified&quot; badge on your profile, this means we
-                have reviewed the ID document, licence, insurance, qualification, or association documents you
-                uploaded and found them to appear authentic and current on their face. It is not a guarantee,
-                warranty, or endorsement of the quality, safety, or legality of any work you perform, and
-                customers should not rely on it as such.
+                we show a &quot;Verified&quot; badge on your profile, this means your ID number, CIPC
+                registration, and bank account were independently checked and came back clean, as part of a
+                paid verification process. It is not a guarantee, warranty, or endorsement of the quality,
+                safety, or legality of any work you perform, and customers should not rely on it as such.
               </li>
               <li>You are solely responsible for your own tax, VAT, and other statutory obligations arising from work performed through the App. Trust-a-Tradie does not act as your accountant, tax practitioner, or employer.</li>
               <li>Once a customer confirms a job complete and releases payment, funds (minus our commission, described below) are paid out to the banking details on your profile.</li>

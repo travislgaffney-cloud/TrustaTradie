@@ -25,7 +25,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { RatingStars } from '@/components/tradie/rating-stars';
 import { Input } from '@/components/ui/input';
 
-type SortOption = 'rating' | 'reviews' | 'jobs';
+type SortOption = 'default' | 'rating' | 'reviews' | 'jobs';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'rating', label: '⭐ Top Rated' },
@@ -39,7 +39,7 @@ export default function TradiesNearMeScreen() {
   const { profile, user } = useAuthStore();
   const [townInput, setTownInput] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<TradeCategory | null>(null);
-  const [sortBy, setSortBy] = useState<SortOption>('rating');
+  const [sortBy, setSortBy] = useState<SortOption>('default');
   const [startingChat, setStartingChat] = useState<string | null>(null);
 
   async function handleMessage(tradieId: string) {
@@ -57,10 +57,18 @@ export default function TradiesNearMeScreen() {
   const { tradies: rawTradies, loading, refresh } = useTradiesByTown(town, selectedCategory ?? undefined);
 
   const tradies = [...rawTradies].sort((a, b) => {
+    // Verified tradies always float to the top, regardless of the chosen
+    // sort — the tier that costs money to earn isn't something a "Most
+    // Jobs" filter should be able to bury.
+    const aVerified = a.is_verified || a.gold_verified;
+    const bVerified = b.is_verified || b.gold_verified;
+    if (aVerified !== bVerified) return aVerified ? -1 : 1;
+
     switch (sortBy) {
       case 'reviews': return b.total_reviews - a.total_reviews;
       case 'jobs': return b.completed_jobs - a.completed_jobs;
-      default: return b.average_rating - a.average_rating;
+      case 'rating': return b.average_rating - a.average_rating;
+      default: return a.full_name.localeCompare(b.full_name);
     }
   });
 
@@ -164,15 +172,11 @@ export default function TradiesNearMeScreen() {
               onPress={() => router.push(`/tradie/${tradie.id}`)}
             >
               <View style={styles.cardHeader}>
-                <Avatar uri={tradie.avatar_url} name={tradie.full_name} size={52} verified={tradie.gold_verified ? 'gold' : tradie.is_verified} />
+                <Avatar uri={tradie.avatar_url} name={tradie.full_name} size={52} verified={tradie.is_verified || tradie.gold_verified} />
                 <View style={styles.cardInfo}>
                   <View style={styles.nameRow}>
                     <Text style={[styles.name, { color: colors.text }]}>{tradie.full_name}</Text>
-                    {tradie.gold_verified ? (
-                      <Badge label="★" variant="gold" />
-                    ) : (
-                      tradie.is_verified && <Badge label="✓" variant="success" />
-                    )}
+                    {(tradie.is_verified || tradie.gold_verified) && <Badge label="✓" variant="success" />}
                   </View>
                   <View style={styles.ratingRow}>
                     <RatingStars rating={tradie.average_rating} showNumber size={13} />

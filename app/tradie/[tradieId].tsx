@@ -48,17 +48,10 @@ const DOC_LABELS: Record<string, string> = {
   other:       'Document',
 };
 
-function showGoldExplanation() {
-  Alert.alert(
-    '★ Gold TT Badge',
-    'This tradie has submitted a certified ID, a qualification certificate, and proof of association membership — each independently reviewed and authenticated by Trust-a-Tradie admin, not just self-declared. This is the highest level of verification on Trust-a-Tradie.'
-  );
-}
-
 function showVerifiedExplanation() {
   Alert.alert(
     '✓ Verified',
-    'This tradie has passed TrustaTradie’s verification checks: a certified copy of their ID, their CIPC business registration, and their trade certificate were all independently checked. This confirms their identity and qualifications — it doesn’t guarantee the quality of their work.'
+    'This tradie has passed TrustaTradie’s verification checks: their ID number, their CIPC business registration, and their bank account were all independently checked. This confirms their identity — it doesn’t guarantee the quality of their work.'
   );
 }
 
@@ -125,20 +118,14 @@ export default function PublicTradieProfileScreen() {
             <Text style={styles.backText}>← Back</Text>
           </Pressable>
           <View style={styles.headerBody}>
-            <Avatar uri={profile.avatar_url} name={profile.full_name} size={80} verified={tradieProfile?.gold_verified ? 'gold' : tradieProfile?.is_verified} />
+            <Avatar uri={profile.avatar_url} name={profile.full_name} size={80} verified={tradieProfile?.is_verified || tradieProfile?.gold_verified} />
             <View style={styles.headerInfo}>
               <View style={styles.nameRow}>
                 <Text style={styles.name}>{profile.full_name}</Text>
-                {tradieProfile?.gold_verified ? (
-                  <Pressable onPress={showGoldExplanation}>
-                    <Badge label="★ Gold Verified ⓘ" variant="gold" />
+                {(tradieProfile?.is_verified || tradieProfile?.gold_verified) && (
+                  <Pressable onPress={showVerifiedExplanation}>
+                    <Badge label="✓ Verified ⓘ" variant="success" />
                   </Pressable>
-                ) : (
-                  tradieProfile?.is_verified && (
-                    <Pressable onPress={showVerifiedExplanation}>
-                      <Badge label="✓ Verified ⓘ" variant="success" />
-                    </Pressable>
-                  )
                 )}
               </View>
               {tradieProfile && <RatingStars rating={tradieProfile.average_rating} showNumber />}

@@ -145,6 +145,38 @@ export interface TradieProfile {
   facebook_url: string | null;
 }
 
+export type TradieVerificationStatus =
+  | 'pending_payment'
+  | 'paid'
+  | 'checking'
+  | 'passed'
+  | 'failed'
+  | 'appealed'
+  | 'appeal_approved'
+  | 'appeal_rejected';
+
+export interface TradieVerification {
+  id: string;
+  tradie_id: string;
+  id_number: string;
+  status: TradieVerificationStatus;
+  ozow_payment_id: string | null;
+  ozow_payment_status: string | null;
+  amount: number;
+  id_check_result: unknown;
+  id_check_passed: boolean | null;
+  cipc_check_result: unknown;
+  cipc_check_passed: boolean | null;
+  bank_check_result: unknown;
+  bank_check_passed: boolean | null;
+  appeal_note: string | null;
+  appeal_submitted_at: string | null;
+  admin_decided_by: string | null;
+  admin_decided_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DisputeReport {
   id: string;
   job_id: string;

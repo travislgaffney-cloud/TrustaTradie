@@ -32,23 +32,11 @@ const DOC_LABELS: Record<string, string> = {
   licence: 'Licence', insurance: 'Insurance', certificate: 'Certificate', id_document: 'ID Document', association: 'Association Membership', other: 'Document',
 };
 
-function hasVerified(documents: TradieDocument[], type: string): boolean {
-  return documents.some((d) => d.type === type && d.is_verified);
-}
-
-function GoldRequirement({ label, done }: { label: string; done: boolean }) {
-  return (
-    <View style={styles.goldReqRow}>
-      <Text style={styles.goldReqIcon}>{done ? '✅' : '⬜️'}</Text>
-      <Text style={styles.goldReqLabel}>{label}</Text>
-    </View>
-  );
-}
-
 export default function TradieProfileScreen() {
   const scheme = useColorScheme() ?? 'light';
   const colors = Colors[scheme];
   const { profile, tradieProfile, setProfile } = useAuthStore();
+  const isVerified = Boolean(tradieProfile?.is_verified || tradieProfile?.gold_verified);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [contactVisible, setContactVisible] = useState(false);
@@ -143,7 +131,7 @@ export default function TradieProfileScreen() {
         <View style={[styles.header, { backgroundColor: Brand.secondary }]}>
           <View style={styles.headerBody}>
             <Pressable onPress={handleAvatarChange} disabled={uploading} style={styles.avatarWrap}>
-              <Avatar uri={profile.avatar_url} name={profile.full_name} size={80} verified={tradieProfile?.gold_verified ? 'gold' : tradieProfile?.is_verified} />
+              <Avatar uri={profile.avatar_url} name={profile.full_name} size={80} verified={tradieProfile?.is_verified || tradieProfile?.gold_verified} />
               {uploading
                 ? <ActivityIndicator color="#fff" />
                 : <Text style={styles.photoLabel}>Change photo</Text>
@@ -152,11 +140,7 @@ export default function TradieProfileScreen() {
             <View style={styles.headerInfo}>
               <View style={styles.nameRow}>
                 <Text style={styles.name}>{profile.full_name}</Text>
-                {tradieProfile?.gold_verified ? (
-                  <Badge label="★ Gold Verified" variant="gold" />
-                ) : (
-                  tradieProfile?.is_verified && <Badge label="✓ Verified" variant="success" />
-                )}
+                {isVerified && <Badge label="✓ Verified" variant="success" />}
               </View>
               {tradieProfile && <RatingStars rating={tradieProfile.average_rating} showNumber />}
               {tradieProfile && (
@@ -225,21 +209,35 @@ export default function TradieProfileScreen() {
             </Card>
           )}
 
-          {/* Qualifications & documents */}
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Qualifications & Documents</Text>
+          {/* Verification */}
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Verification</Text>
 
           <Card style={styles.goldCard}>
             <Text style={[styles.goldTitle, { color: colors.text }]}>
-              {tradieProfile?.gold_verified ? '★ Gold TT Badge — Earned' : '★ Earn the Gold TT Badge'}
+              {isVerified ? '✓ Verified' : 'Get Verified'}
             </Text>
             <Text style={[styles.goldDesc, { color: colors.textSecondary }]}>
-              {tradieProfile?.gold_verified
-                ? 'All three of your documents have been submitted and authenticated by Trust-a-Tradie admin. Customers see this as the highest level of verified.'
-                : 'Upload all three below. Once admin authenticates each one, customers will see you as the highest level of verified.'}
+              {isVerified
+                ? 'Your ID, CIPC registration, and bank account have all been independently checked. Customers see this as a trust badge on your profile.'
+                : 'For a once-off R100 fee, we automatically verify your ID, CIPC registration, and bank account — and you appear first in search results.'}
             </Text>
-            <GoldRequirement label="Certified ID copy" done={hasVerified(documents, 'id_document')} />
-            <GoldRequirement label="Qualification certificate" done={hasVerified(documents, 'certificate')} />
-            <GoldRequirement label="Association membership" done={hasVerified(documents, 'association')} />
+            {!isVerified && (
+              <Pressable
+                style={[styles.uploadDocsBtn, { borderColor: colors.border }]}
+                onPress={() => router.push('/(tradie)/profile/verify')}
+              >
+                <Text style={[styles.uploadDocsBtnText, { color: colors.tint }]}>✓ Get Verified</Text>
+              </Pressable>
+            )}
+          </Card>
+
+          {/* Documents */}
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Documents</Text>
+
+          <Card style={styles.goldCard}>
+            <Text style={[styles.goldDesc, { color: colors.textSecondary }]}>
+              Upload your licence, insurance, and other documents here for Trust-a-Tradie admin to review.
+            </Text>
             <Pressable
               style={[styles.uploadDocsBtn, { borderColor: colors.border }]}
               onPress={() => router.push('/(tradie)/profile/documents')}
@@ -390,9 +388,6 @@ const styles = StyleSheet.create({
   goldCard: { gap: 10, borderColor: '#fcd34d', borderWidth: 1, backgroundColor: '#fffbeb' },
   goldTitle: { fontSize: 15, fontWeight: '700' },
   goldDesc: { fontSize: 13, lineHeight: 18 },
-  goldReqRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  goldReqIcon: { fontSize: 14 },
-  goldReqLabel: { fontSize: 13, color: '#92400e' },
   uploadDocsBtn: { borderWidth: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center', marginTop: 4 },
   uploadDocsBtnText: { fontSize: 14, fontWeight: '600' },
   emptyHint: { alignItems: 'center', paddingVertical: 12 },
