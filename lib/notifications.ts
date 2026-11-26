@@ -172,6 +172,9 @@ export function getNotificationRoute(
       return '/(tradie)/rewards/slips';
     case 'payment_release_decision':
       return '/(tradie)/earnings';
+    case 'verification_appeal_approved':
+    case 'verification_appeal_rejected':
+      return '/(tradie)/profile/verify';
     default:
       return null;
   }

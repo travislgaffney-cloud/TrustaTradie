@@ -30,7 +30,9 @@ export type NotificationType =
   | 'reward_slip_approved'
   | 'reward_slip_rejected'
   | 'payment_release_requested'
-  | 'payment_release_decision';
+  | 'payment_release_decision'
+  | 'verification_appeal_approved'
+  | 'verification_appeal_rejected';
 
 export type RewardSlipStatus = 'pending' | 'approved' | 'rejected';
 
