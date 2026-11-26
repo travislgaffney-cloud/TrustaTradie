@@ -13,6 +13,13 @@ port = 54324
 [storage]
 file_size_limit = "50MiB"
 
+# Ozow's webhook calls this with its own Svix signature headers, not a
+# Supabase JWT -- without this, Supabase's gateway would reject the
+# request with 401 before ozow-webhook's own signature verification ever
+# runs.
+[functions.ozow-webhook]
+verify_jwt = false
+
 [auth]
 site_url = "trustatradie://"
 additional_redirect_urls = ["trustatradie://auth/callback", "trustatradie://payment/success", "trustatradie://payment/cancel"]
