@@ -7,7 +7,7 @@ const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 );
 
-const VERIFICATION_FEE = 100.00;
+const VERIFICATION_FEE = 99.00;
 const ID_NUMBER_PATTERN = /^\d{13}$/;
 
 Deno.serve(async (req) => {

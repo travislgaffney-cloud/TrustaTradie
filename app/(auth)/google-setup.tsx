@@ -169,7 +169,7 @@ export default function GoogleSetupScreen() {
               <View style={styles.verifyNotice}>
                 <Text style={styles.verifyNoticeTitle}>✓ Want the Verified badge?</Text>
                 <Text style={styles.verifyNoticeBody}>
-                  After signing up, you can apply to get verified for a once-off R100 fee —
+                  After signing up, you can apply to get verified for a once-off R99 fee —
                   we automatically check your ID number, CIPC registration, and bank account.
                   Verified tradies get a trust badge on their profile and appear first in
                   search results — ahead of unverified tradies.

@@ -17,7 +17,7 @@ import { useAuthStore } from '@/store/auth-store';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const VERIFICATION_FEE = 100;
+const VERIFICATION_FEE = 99;
 
 export default function GetVerifiedScreen() {
   const scheme = useColorScheme() ?? 'light';

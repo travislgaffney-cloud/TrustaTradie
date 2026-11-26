@@ -219,7 +219,7 @@ export default function TradieProfileScreen() {
             <Text style={[styles.goldDesc, { color: colors.textSecondary }]}>
               {isVerified
                 ? 'Your ID, CIPC registration, and bank account have all been independently checked. Customers see this as a trust badge on your profile.'
-                : 'For a once-off R100 fee, we automatically verify your ID, CIPC registration, and bank account — and you appear first in search results.'}
+                : 'For a once-off R99 fee, we automatically verify your ID, CIPC registration, and bank account — and you appear first in search results.'}
             </Text>
             {!isVerified && (
               <Pressable

@@ -46,7 +46,7 @@ const STEPS = [
   {
     icon: "✓",
     title: "Get Verified (optional)",
-    body: "For a once-off R100 fee, we automatically check your ID number, CIPC registration, and bank account. Verified tradies get a trust badge and appear first in search results.",
+    body: "For a once-off R99 fee, we automatically check your ID number, CIPC registration, and bank account. Verified tradies get a trust badge and appear first in search results.",
   },
   {
     icon: "🔍",
