@@ -84,7 +84,19 @@ export default function CustomerGuidePage() {
           ))}
         </ol>
 
-        <div className="mt-16 rounded-2xl bg-[#1B2D4F] p-10 text-center">
+        <div className="mt-14 rounded-2xl border border-green-200 bg-green-50 p-8">
+          <h2 className="text-xl font-extrabold text-[#1B2D4F]">What does ✓ Verified mean?</h2>
+          <p className="mt-3 text-sm leading-relaxed text-gray-700">
+            A tradie with the <strong>✓ Verified</strong> badge has paid for and passed TrustaTradie&apos;s
+            verification checks: their <strong>ID number</strong>, <strong>CIPC business registration</strong>,
+            and <strong>bank account</strong> were all independently checked and came back clean. This confirms
+            their identity and that their business and banking details are genuine — it doesn&apos;t guarantee
+            the quality of their work, so it&apos;s still worth checking ratings and reviews before you accept
+            a quote.
+          </p>
+        </div>
+
+        <div className="mt-10 rounded-2xl bg-[#1B2D4F] p-10 text-center">
           <h2 className="text-2xl font-extrabold text-white">Ready to post your first job?</h2>
           <p className="mt-2 text-white/70">It's free to join, and payment stays protected until you're happy.</p>
           <StoreButtons className="mt-7 justify-center" />

@@ -37,13 +37,18 @@ const TRADIE_STEPS = [
     title: "Get paid",
     body: "No deposits — the full amount is held in escrow, and once the customer confirms the job's complete, your portion lands straight in your bank account in one payment.",
   },
+  {
+    icon: "✓",
+    title: "Get Verified (optional)",
+    body: "For a once-off R99 fee, we automatically check your ID number, CIPC registration, and bank account. Verified tradies get a trust badge and appear first in search results.",
+  },
 ];
 
 const FEATURES = [
   {
-    icon: "✅",
-    title: "Vetted tradies",
-    body: "Licences, insurance, and certifications are checked before a tradie can take on jobs.",
+    icon: "✓",
+    title: "Verified tradies",
+    body: "Verified tradies have had their ID, CIPC registration, and bank account independently checked — look for the ✓ Verified badge.",
   },
   {
     icon: "🔒",
