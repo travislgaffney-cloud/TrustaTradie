@@ -14,10 +14,8 @@ import { getNotificationRoute } from '@/lib/notifications';
 import type { Notification } from '@/types/database';
 
 const TYPE_ICONS: Record<string, string> = {
-  new_job_nearby: '📍',
   quote_rejected: '❌',
   payment_released: '💰',
-  new_message: '✉️',
   rating_received: '⭐',
 };
 

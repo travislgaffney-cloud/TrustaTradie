@@ -17,4 +17,7 @@ export const NOTIFICATION_ICON_SOURCES: Partial<Record<string, ImageSourcePropTy
   site_visit_requested: require('@/assets/images/notifications/calendar.png'),
 
   new_quote_received: require('@/assets/images/notifications/hard-hat.png'),
+
+  new_job_nearby: require('@/assets/images/notifications/location-pin.png'),
+  new_message: require('@/assets/images/notifications/new-message.png'),
 };
